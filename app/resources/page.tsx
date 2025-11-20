@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Search, BookOpen, FileText, GraduationCap } from "lucide-react";
+import Combobox from "@/components/Combobox";
 
 // BBDU Syllabus Data Structure
 const bbduCourses = [
@@ -28,6 +29,31 @@ const bbduCourses = [
             id: "sem3",
             name: "Semester 3",
             subjects: ["Discrete Structures", "Computer Org & Arch", "Digital Logic Design", "Object Oriented Prog (Java)", "Industrial Sociology"]
+          },
+          {
+            id: "sem4",
+            name: "Semester 4",
+            subjects: ["Operating Systems", "Introduction to Microprocessor", "Software Engineering", "Graph Theory", "Universal Human Values"]
+          },
+          {
+            id: "sem5",
+            name: "Semester 5",
+            subjects: ["Database Management Systems", "Design & Analysis of Algorithms", "Theory of Automata", "Web Technology", "Engineering Economics"]
+          },
+          {
+            id: "sem6",
+            name: "Semester 6",
+            subjects: ["Compiler Design", "Computer Networks", "Data Warehousing & Mining", "Advanced Java", "Industrial Management"]
+          },
+          {
+            id: "sem7",
+            name: "Semester 7",
+            subjects: ["Distributed Systems", "Artificial Intelligence", "Cryptography & Network Security", "Cloud Computing", "Project Phase-I"]
+          },
+          {
+            id: "sem8",
+            name: "Semester 8",
+            subjects: ["Mobile Computing", "Machine Learning", "Digital Image Processing", "Project Phase-II", "Grand Viva"]
           }
         ]
       },
@@ -246,27 +272,16 @@ Subject: ${subject}`);
               </div>
             )}
 
-            {/* Subject Dropdown - Fade in when semester selected */}
+            {/* Subject Combobox (Searchable) - Fade in when semester selected */}
             {semester && (
-              <div className="animate-fade-in">
-                <label htmlFor="subject" className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
-                  <span className="flex items-center justify-center w-6 h-6 bg-indigo-700 text-white rounded-full text-xs">4</span>
-                  Select Subject
-                </label>
-                <select
-                  id="subject"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  className="w-full px-5 py-4 bg-white border-2 border-slate-300 rounded-2xl text-slate-900 font-medium text-lg focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-700 transition-all outline-none hover:border-slate-400"
-                >
-                  <option value="">Choose subject...</option>
-                  {availableSubjects.map((sub) => (
-                    <option key={sub} value={sub}>
-                      {sub}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Combobox
+                value={subject}
+                onChange={setSubject}
+                options={availableSubjects}
+                placeholder="Search or select subject..."
+                label="Select Subject"
+                stepNumber={4}
+              />
             )}
 
             {/* Search Resources Button - Pulsing animation when all selected */}
