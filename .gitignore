@@ -48,8 +48,5 @@ next-env.d.ts
 # OS
 Thumbs.db
 
-# Scripts
-start.ps1
-
 # GitHub
 .github/
