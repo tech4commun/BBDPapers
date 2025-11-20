@@ -124,11 +124,11 @@ export default function HeroSearch() {
           onFocus={() => {
             if (suggestions.length > 0) setIsOpen(true);
           }}
-          className="w-full pl-12 pr-4 py-4 text-lg rounded-2xl border-2 border-slate-200 bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-400"
+          className="w-full pl-12 pr-4 py-4 text-lg text-white rounded-2xl border border-white/10 bg-slate-900/50 backdrop-blur-xl shadow-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder:text-slate-400 hover:border-white/20"
         />
         {isSearching && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
       </div>
@@ -137,7 +137,7 @@ export default function HeroSearch() {
       {isOpen && suggestions.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-md rounded-xl border border-slate-200 shadow-xl overflow-hidden animate-fade-in"
+          className="absolute z-50 w-full mt-2 bg-slate-900/50 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden animate-fade-in"
         >
           {suggestions.map((suggestion, index) => {
             const Icon = suggestion.type === "notes" ? FileText : HelpCircle;
@@ -150,20 +150,20 @@ export default function HeroSearch() {
                 onMouseEnter={() => setSelectedIndex(index)}
                 className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-colors ${
                   isSelected
-                    ? "bg-indigo-50 text-indigo-900"
-                    : "hover:bg-slate-50 text-slate-900"
+                    ? "bg-blue-500/20 text-white"
+                    : "hover:bg-slate-800/50 text-slate-200"
                 }`}
               >
                 <Icon
                   className={`w-5 h-5 flex-shrink-0 ${
-                    isSelected ? "text-indigo-600" : "text-slate-400"
+                    isSelected ? "text-blue-400" : "text-slate-400"
                   }`}
                 />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{suggestion.title}</div>
                   <div
                     className={`text-sm truncate ${
-                      isSelected ? "text-indigo-700" : "text-slate-500"
+                      isSelected ? "text-blue-300" : "text-slate-400"
                     }`}
                   >
                     {suggestion.subject}
@@ -172,8 +172,8 @@ export default function HeroSearch() {
                 <div
                   className={`text-xs px-2 py-1 rounded-full font-medium ${
                     isSelected
-                      ? "bg-indigo-200 text-indigo-800"
-                      : "bg-slate-100 text-slate-600"
+                      ? "bg-blue-500 text-white"
+                      : "bg-slate-800 text-slate-300"
                   }`}
                 >
                   {suggestion.type.toUpperCase()}
