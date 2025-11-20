@@ -2,156 +2,298 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { Search, BookOpen, FileText } from "lucide-react";
+import { Search, BookOpen, FileText, GraduationCap } from "lucide-react";
 
-// Mock data for dropdowns
-const semesters = [1, 2, 3, 4, 5, 6, 7, 8];
-const branches = [
-  { id: "cs", name: "Computer Science" },
-  { id: "it", name: "Information Technology" },
-  { id: "ece", name: "Electronics & Communication" },
-  { id: "ee", name: "Electrical Engineering" },
-  { id: "me", name: "Mechanical Engineering" },
-  { id: "ce", name: "Civil Engineering" },
+// BBDU Syllabus Data Structure
+const bbduCourses = [
+  {
+    id: "btech",
+    name: "Bachelor of Technology (B.Tech)",
+    branches: [
+      {
+        id: "cse",
+        name: "Computer Science (CSE)",
+        semesters: [
+          {
+            id: "sem1",
+            name: "Semester 1",
+            subjects: ["Engineering Math-I", "Engineering Physics", "Basic Electrical Eng", "Professional Comm", "C Programming"]
+          },
+          {
+            id: "sem2",
+            name: "Semester 2",
+            subjects: ["Engineering Math-II", "Engineering Chemistry", "Basic Electronics", "Environmental Science", "Data Structures (C)"]
+          },
+          {
+            id: "sem3",
+            name: "Semester 3",
+            subjects: ["Discrete Structures", "Computer Org & Arch", "Digital Logic Design", "Object Oriented Prog (Java)", "Industrial Sociology"]
+          }
+        ]
+      },
+      {
+        id: "me",
+        name: "Mechanical Engineering",
+        semesters: [
+          {
+            id: "sem3",
+            name: "Semester 3",
+            subjects: ["Thermodynamics", "Fluid Mechanics", "Material Science", "Mechanics of Solids", "Applied Math-III"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "bca",
+    name: "Bachelor of Computer Apps (BCA)",
+    branches: [
+      {
+        id: "regular",
+        name: "Regular",
+        semesters: [
+          {
+            id: "sem1",
+            name: "Semester 1",
+            subjects: ["Essentials of Professional Comm", "Principle of Management", "Mathematics-I", "Computer Fundamentals", "C Programming"]
+          },
+          {
+            id: "sem2",
+            name: "Semester 2",
+            subjects: ["Organization Behavior", "Financial Accounting", "Mathematics-II", "Data Structures", "Digital Electronics"]
+          }
+        ]
+      },
+      {
+        id: "ds_ai",
+        name: "Data Science & AI (IBM)",
+        semesters: [
+          {
+            id: "sem1",
+            name: "Semester 1",
+            subjects: ["Intro to AI", "Python Programming", "Mathematics for AI", "Comm Skills", "Operating Systems"]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "bba",
+    name: "Bachelor of Business Admin (BBA)",
+    branches: [
+      {
+        id: "gen",
+        name: "General",
+        semesters: [
+          {
+            id: "sem1",
+            name: "Semester 1",
+            subjects: ["Principles of Management", "Microeconomics", "Business Accounting", "Business Comm", "Computer Apps in Mgmt"]
+          }
+        ]
+      }
+    ]
+  }
 ];
-
-const subjectsByBranch: Record<string, string[]> = {
-  cs: ["Data Structures", "Algorithms", "DBMS", "Operating Systems", "Computer Networks"],
-  it: ["Web Development", "Software Engineering", "Cloud Computing", "Cyber Security"],
-  ece: ["Digital Electronics", "Signal Processing", "Communication Systems", "VLSI Design"],
-  ee: ["Power Systems", "Control Systems", "Electric Machines", "Power Electronics"],
-  me: ["Thermodynamics", "Fluid Mechanics", "Manufacturing Processes", "Machine Design"],
-  ce: ["Structural Analysis", "Geotechnical Engineering", "Transportation Engineering", "Hydraulics"],
-};
 
 export default function ResourcesPage() {
   const searchParams = useSearchParams();
   const resourceType = searchParams.get("type"); // 'pyq' or 'notes'
 
-  const [semester, setSemester] = useState("");
+  // Cascading state management
+  const [course, setCourse] = useState("");
   const [branch, setBranch] = useState("");
+  const [semester, setSemester] = useState("");
   const [subject, setSubject] = useState("");
 
-  // Get subjects based on selected branch
-  const availableSubjects = branch ? subjectsByBranch[branch] || [] : [];
+  // Get available options based on selections
+  const selectedCourse = bbduCourses.find(c => c.id === course);
+  const availableBranches = selectedCourse?.branches || [];
+  
+  const selectedBranch = availableBranches.find(b => b.id === branch);
+  const availableSemesters = selectedBranch?.semesters || [];
+  
+  const selectedSemester = availableSemesters.find(s => s.id === semester);
+  const availableSubjects = selectedSemester?.subjects || [];
 
   // Check if all fields are selected
-  const isFormComplete = semester && branch && subject;
+  const isFormComplete = course && branch && semester && subject;
+
+  // Cascading handlers with reset logic
+  const handleCourseChange = (newCourse: string) => {
+    setCourse(newCourse);
+    setBranch("");
+    setSemester("");
+    setSubject("");
+  };
+
+  const handleBranchChange = (newBranch: string) => {
+    setBranch(newBranch);
+    setSemester("");
+    setSubject("");
+  };
+
+  const handleSemesterChange = (newSemester: string) => {
+    setSemester(newSemester);
+    setSubject("");
+  };
 
   const handleFindResources = () => {
     if (!isFormComplete) return;
     
     // TODO: Implement resource fetching logic
-    console.log("Searching resources:", { semester, branch, subject, resourceType });
+    console.log("Searching resources:", { course, branch, semester, subject, resourceType });
     alert(`Searching for ${resourceType === "pyq" ? "Previous Year Papers" : "Lecture Notes"}
-Semester: ${semester}
-Branch: ${branches.find(b => b.id === branch)?.name}
+Course: ${selectedCourse?.name}
+Branch: ${selectedBranch?.name}
+Semester: ${selectedSemester?.name}
 Subject: ${subject}`);
   };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] px-4 py-12">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
+        {/* Glassmorphic Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-3xl mb-6 shadow-xl">
             {resourceType === "pyq" ? (
-              <FileText className="w-8 h-8 text-indigo-600" />
+              <FileText className="w-10 h-10 text-white" />
             ) : (
-              <BookOpen className="w-8 h-8 text-indigo-600" />
+              <BookOpen className="w-10 h-10 text-white" />
             )}
+          </div>
+          <div className="inline-flex items-center gap-2 mb-4">
+            <GraduationCap className="w-6 h-6 text-indigo-700" />
+            <span className="text-sm font-semibold text-indigo-700 uppercase tracking-wide">
+              BBDU Student Portal
+            </span>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             Find {resourceType === "pyq" ? "Previous Year Papers" : "Lecture Notes"}
           </h1>
-          <p className="text-lg text-slate-600">
-            Configure your preferences to discover the perfect study materials
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            Select your course, branch, semester, and subject to access study materials
           </p>
         </div>
 
-        {/* Configuration Card */}
-        <div className="bg-white/70 backdrop-blur-md border border-white/20 shadow-xl rounded-3xl p-8 md:p-12">
+        {/* Cascading Filter Card */}
+        <div className="bg-white/80 backdrop-blur-xl border border-slate-200/50 shadow-2xl rounded-3xl p-8 md:p-12">
           <div className="space-y-6">
-            {/* Semester Dropdown */}
-            <div>
-              <label htmlFor="semester" className="block text-sm font-semibold text-slate-700 mb-2">
-                Select Semester
+            {/* Course Dropdown */}
+            <div className="animate-fade-in">
+              <label htmlFor="course" className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
+                <span className="flex items-center justify-center w-6 h-6 bg-indigo-700 text-white rounded-full text-xs">1</span>
+                Select Course
               </label>
               <select
-                id="semester"
-                value={semester}
-                onChange={(e) => setSemester(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                id="course"
+                value={course}
+                onChange={(e) => handleCourseChange(e.target.value)}
+                className="w-full px-5 py-4 bg-white border-2 border-slate-300 rounded-2xl text-slate-900 font-medium text-lg focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-700 transition-all outline-none hover:border-slate-400"
               >
-                <option value="">Choose semester...</option>
-                {semesters.map((sem) => (
-                  <option key={sem} value={sem}>
-                    Semester {sem}
+                <option value="">Choose your course...</option>
+                {bbduCourses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Branch Dropdown */}
-            <div>
-              <label htmlFor="branch" className="block text-sm font-semibold text-slate-700 mb-2">
-                Select Branch
-              </label>
-              <select
-                id="branch"
-                value={branch}
-                onChange={(e) => {
-                  setBranch(e.target.value);
-                  setSubject(""); // Reset subject when branch changes
-                }}
-                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
-              >
-                <option value="">Choose branch...</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Branch Dropdown - Fade in when course selected */}
+            {course && (
+              <div className="animate-fade-in">
+                <label htmlFor="branch" className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
+                  <span className="flex items-center justify-center w-6 h-6 bg-indigo-700 text-white rounded-full text-xs">2</span>
+                  Select Branch
+                </label>
+                <select
+                  id="branch"
+                  value={branch}
+                  onChange={(e) => handleBranchChange(e.target.value)}
+                  className="w-full px-5 py-4 bg-white border-2 border-slate-300 rounded-2xl text-slate-900 font-medium text-lg focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-700 transition-all outline-none hover:border-slate-400"
+                >
+                  <option value="">Choose your branch...</option>
+                  {availableBranches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-            {/* Subject Dropdown */}
-            <div>
-              <label htmlFor="subject" className="block text-sm font-semibold text-slate-700 mb-2">
-                Select Subject
-              </label>
-              <select
-                id="subject"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                disabled={!branch}
-                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none disabled:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400"
-              >
-                <option value="">
-                  {branch ? "Choose subject..." : "Select a branch first"}
-                </option>
-                {availableSubjects.map((sub) => (
-                  <option key={sub} value={sub}>
-                    {sub}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Semester Dropdown - Fade in when branch selected */}
+            {branch && (
+              <div className="animate-fade-in">
+                <label htmlFor="semester" className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
+                  <span className="flex items-center justify-center w-6 h-6 bg-indigo-700 text-white rounded-full text-xs">3</span>
+                  Select Semester
+                </label>
+                <select
+                  id="semester"
+                  value={semester}
+                  onChange={(e) => handleSemesterChange(e.target.value)}
+                  className="w-full px-5 py-4 bg-white border-2 border-slate-300 rounded-2xl text-slate-900 font-medium text-lg focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-700 transition-all outline-none hover:border-slate-400"
+                >
+                  <option value="">Choose semester...</option>
+                  {availableSemesters.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-            {/* Find Resources Button */}
-            <button
-              onClick={handleFindResources}
-              disabled={!isFormComplete}
-              className="w-full mt-8 px-6 py-4 bg-indigo-600 text-white text-lg font-semibold rounded-xl hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3 group"
-            >
-              <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              Find Resources
-            </button>
+            {/* Subject Dropdown - Fade in when semester selected */}
+            {semester && (
+              <div className="animate-fade-in">
+                <label htmlFor="subject" className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
+                  <span className="flex items-center justify-center w-6 h-6 bg-indigo-700 text-white rounded-full text-xs">4</span>
+                  Select Subject
+                </label>
+                <select
+                  id="subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="w-full px-5 py-4 bg-white border-2 border-slate-300 rounded-2xl text-slate-900 font-medium text-lg focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-700 transition-all outline-none hover:border-slate-400"
+                >
+                  <option value="">Choose subject...</option>
+                  {availableSubjects.map((sub) => (
+                    <option key={sub} value={sub}>
+                      {sub}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Search Resources Button - Pulsing animation when all selected */}
+            {isFormComplete && (
+              <div className="pt-6 animate-fade-in">
+                <button
+                  onClick={handleFindResources}
+                  className="w-full px-8 py-5 bg-gradient-to-r from-indigo-700 to-indigo-900 text-white text-xl font-bold rounded-2xl hover:from-indigo-800 hover:to-indigo-950 transition-all shadow-2xl hover:shadow-indigo-500/50 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 animate-pulse-slow"
+                >
+                  <Search className="w-6 h-6" />
+                  Search Resources
+                </button>
+              </div>
+            )}
+
+            {/* Progress Indicator */}
+            <div className="pt-4 flex items-center justify-center gap-2">
+              <div className={`w-3 h-3 rounded-full transition-all ${course ? 'bg-indigo-700' : 'bg-slate-300'}`}></div>
+              <div className={`w-3 h-3 rounded-full transition-all ${branch ? 'bg-indigo-700' : 'bg-slate-300'}`}></div>
+              <div className={`w-3 h-3 rounded-full transition-all ${semester ? 'bg-indigo-700' : 'bg-slate-300'}`}></div>
+              <div className={`w-3 h-3 rounded-full transition-all ${subject ? 'bg-indigo-700' : 'bg-slate-300'}`}></div>
+            </div>
 
             {/* Helper Text */}
             {!isFormComplete && (
-              <p className="text-sm text-slate-500 text-center mt-4">
-                Please select all three options to continue
+              <p className="text-sm text-slate-500 text-center pt-2">
+                Complete all {4 - [course, branch, semester, subject].filter(Boolean).length} remaining step{[course, branch, semester, subject].filter(Boolean).length !== 3 ? 's' : ''} to search
               </p>
             )}
           </div>
