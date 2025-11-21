@@ -148,7 +148,7 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ## 👨‍💻 Author
 
-**Ankit Troy**
+**Ankit roy**
 - GitHub: [@ankittroy-21](https://github.com/ankittroy-21)
 
 ---
