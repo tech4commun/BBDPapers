@@ -70,7 +70,7 @@ export default function FloatingCornerIcons() {
       {allIcons.map((icon) => (
         <motion.div
           key={`icon-${icon.left}-${icon.id}`}
-          className="absolute text-blue-500"
+          className="absolute text-blue-500 will-change-transform"
           style={{
             left: `${icon.left}%`,
             bottom: "-100px",
