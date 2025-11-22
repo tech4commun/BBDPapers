@@ -181,24 +181,11 @@ Subject: ${subject}`);
       <div className="max-w-4xl mx-auto">
         {/* Glassmorphic Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl mb-6 shadow-xl">
-            {resourceType === "pyq" ? (
-              <FileText className="w-10 h-10 text-white" />
-            ) : (
-              <BookOpen className="w-10 h-10 text-white" />
-            )}
-          </div>
-          <div className="inline-flex items-center gap-2 mb-4">
-            <GraduationCap className="w-6 h-6 text-blue-400" />
-            <span className="text-sm font-semibold text-blue-400 uppercase tracking-wide">
-              BBDU Student Portal
-            </span>
-          </div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 tracking-tight">
             Find {resourceType === "pyq" ? "Previous Year Papers" : "Lecture Notes"}
           </h1>
           <p className="text-base md:text-lg text-slate-300 max-w-2xl mx-auto">
-            Select your course, branch, semester, and subject to access study materials
+            Select your course, branch, semester, and subject to access {resourceType === "pyq" ? "PYQ" : "Notes"}
           </p>
         </div>
 
