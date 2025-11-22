@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useDebounce } from "use-debounce";
-import { Search, FileText, HelpCircle } from "lucide-react";
+import { Search, FileText, BookOpen } from "lucide-react";
 import { getSearchSuggestions } from "@/app/actions";
 
 interface SearchSuggestion {
@@ -16,7 +16,7 @@ interface SearchSuggestion {
 export default function HeroSearch() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [rawSuggestions, setRawSuggestions] = useState<SearchSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -26,25 +26,30 @@ export default function HeroSearch() {
   // Debounce the query with 300ms delay
   const [debouncedQuery] = useDebounce(query, 300);
 
+  // Memoized filtered suggestions (limit to 5 results for performance)
+  const suggestions = useMemo(() => {
+    return rawSuggestions.slice(0, 5);
+  }, [rawSuggestions]);
+
   // Fetch suggestions when debounced query changes
   useEffect(() => {
     if (debouncedQuery.trim().length >= 2) {
       setIsSearching(true);
       getSearchSuggestions(debouncedQuery)
         .then((results) => {
-          setSuggestions(results);
+          setRawSuggestions(results);
           setIsOpen(results.length > 0);
           setSelectedIndex(-1);
         })
         .catch((error) => {
           console.error("Search failed:", error);
-          setSuggestions([]);
+          setRawSuggestions([]);
         })
         .finally(() => {
           setIsSearching(false);
         });
     } else {
-      setSuggestions([]);
+      setRawSuggestions([]);
       setIsOpen(false);
       setSelectedIndex(-1);
     }
@@ -137,10 +142,11 @@ export default function HeroSearch() {
       {isOpen && suggestions.length > 0 && (
         <div
           ref={dropdownRef}
+          onMouseLeave={() => setSelectedIndex(-1)}
           className="absolute z-50 w-full mt-2 bg-slate-900/50 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden animate-fade-in"
         >
           {suggestions.map((suggestion, index) => {
-            const Icon = suggestion.type === "notes" ? FileText : HelpCircle;
+            const Icon = suggestion.type === "notes" ? BookOpen : FileText;
             const isSelected = index === selectedIndex;
 
             return (
