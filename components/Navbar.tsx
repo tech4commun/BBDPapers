@@ -16,7 +16,7 @@ export default function Navbar() {
     { href: "/", label: "Home" },
     { href: "/about", label: "About" },
     { href: "/upload", label: "Upload" },
-    { href: "/contact", label: "Contact" },
+    { href: "/feedback", label: "Feedback" },
   ];
 
   // Scroll lock when drawer is open
@@ -41,12 +41,21 @@ export default function Navbar() {
             <span className="text-2xl font-bold text-blue-400">BBD Notes</span>
           </Link>
 
-          {/* Compact Search (Center) - Hidden on Mobile & Homepage */}
-          {!isHomePage && (
-            <div className="hidden md:flex flex-1 justify-center max-w-md mx-4">
-              <CompactSearch />
-            </div>
-          )}
+          {/* Compact Search (Center) - Hidden on Mobile & Homepage with Animation */}
+          <AnimatePresence mode="wait">
+            {!isHomePage && (
+              <motion.div
+                key="compact-search"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="hidden md:flex flex-1 justify-center max-w-md mx-4"
+              >
+                <CompactSearch />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Desktop Navigation (Right) - Hidden on Mobile */}
           <div className="hidden md:flex items-center gap-8">
