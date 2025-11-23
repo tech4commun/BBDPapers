@@ -1,5 +1,5 @@
 # Start the Next.js development server and open browser
-Write-Host "Starting BBD Notes development server..." -ForegroundColor Cyan
+Write-Host "Starting BBD Papers development server..." -ForegroundColor Cyan
 
 # Start the dev server in the background
 $devServer = Start-Process pwsh -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot'; npm run dev" -PassThru
@@ -12,5 +12,5 @@ Start-Sleep -Seconds 5
 Write-Host "Opening browser..." -ForegroundColor Green
 Start-Process "http://localhost:3000"
 
-Write-Host "`nBBD Notes is now running!" -ForegroundColor Green
+Write-Host "`nBBD Papers is now running!" -ForegroundColor Green
 Write-Host "Press Ctrl+C in the server window to stop." -ForegroundColor Yellow
