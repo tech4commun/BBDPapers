@@ -1,136 +1,103 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
-import { FileText, BookOpen, ArrowRight, AlertCircle } from "lucide-react";
-import { motion } from "framer-motion";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
+import { FileText, Notebook, AlertCircle, ArrowRight } from 'lucide-react';
+import dynamic from 'next/dynamic';
 
-// Lazy load the heavy modal - won't affect page speed until used
-const UploadModal = dynamic(() => import("@/components/UploadModal"), {
-  loading: () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="text-white text-lg">Loading uploader...</div>
-    </div>
-  ),
-  ssr: false
+// Lazy load the modal to keep page fast
+const UploadModal = dynamic(() => import('@/components/UploadModal'), {
+  ssr: false,
 });
 
 export default function UploadPage() {
-  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedType, setSelectedType] = useState<"pyq" | "notes">("pyq");
+  const [uploadType, setUploadType] = useState<'notes' | 'pyq'>('notes');
+  const router = useRouter();
 
-  // TODO: Replace with actual Supabase auth check
-  const isLoggedIn = false; // Mock: Set to true to test modal
-
-  const uploadOptions = [
-    {
-      id: "pyq" as const,
-      icon: FileText,
-      title: "Upload Previous Year Papers",
-      description: "Help juniors by sharing exam papers",
-      color: "from-blue-500 to-indigo-600"
-    },
-    {
-      id: "notes" as const,
-      icon: BookOpen,
-      title: "Upload Lecture Notes",
-      description: "Share your study materials with peers",
-      color: "from-indigo-500 to-purple-600"
-    }
-  ];
-
-  const handleUpload = (type: "pyq" | "notes") => {
-    setSelectedType(type);
-
-    // Auth Guard: Check if user is logged in
-    if (!isLoggedIn) {
-      // Option 1: Redirect to login page
-      router.push("/login");
-      
-      // Option 2: Show toast notification (uncomment to use)
-      // alert("You must login to contribute resources.");
-      return;
-    }
-
-    // User is logged in - Open upload modal
+  const handleUploadClick = (type: 'notes' | 'pyq') => {
+    console.log("🔵 Button clicked:", type);
+    
+    // Simply open the modal - let the modal handle auth check
+    setUploadType(type);
     setIsModalOpen(true);
+    console.log("🔵 Modal opened");
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] px-4 md:px-6 py-12 flex items-center justify-center">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-2xl mx-auto w-full"
-      >
+    <div className="min-h-screen bg-slate-950 pt-32 pb-12 px-4 md:px-8">
+      <div className="max-w-3xl mx-auto space-y-12">
+        
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 tracking-tight">
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
             Share Your Knowledge
           </h1>
-          <p className="text-base md:text-lg text-slate-400">
+          <p className="text-slate-400 text-lg">
             Select the type of resource you want to contribute.
           </p>
         </div>
 
-        {/* Upload Options - Vertical Stack with Staggered Animation */}
-        <div className="space-y-6 mb-8">
-          {uploadOptions.map((option, index) => {
-            const Icon = option.icon;
-            return (
-              <motion.button
-                key={option.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + index * 0.1, duration: 0.5, ease: "easeOut" }}
-                onClick={() => handleUpload(option.id)}
-                className="w-full p-6 flex items-center gap-6 rounded-2xl bg-slate-900/50 border border-white/10 backdrop-blur-xl transition-all duration-300 hover:border-indigo-500/50 hover:bg-slate-900/80 hover:scale-[1.02] cursor-pointer group"
-              >
-                {/* Icon with Gradient Glow */}
-                <div className={`flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br ${option.color} flex items-center justify-center shadow-xl group-hover:shadow-indigo-500/50 transition-shadow`}>
-                  <Icon className="w-8 h-8 text-white" strokeWidth={2} />
-                </div>
+        {/* Action Cards */}
+        <div className="grid gap-6">
+          
+          {/* Card 1: PYQ */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleUploadClick('pyq');
+            }}
+            className="group relative flex items-center gap-6 p-6 rounded-2xl bg-slate-900/50 border border-white/10 backdrop-blur-xl hover:bg-slate-900/80 hover:border-indigo-500/50 hover:scale-[1.01] transition-all duration-300 cursor-pointer text-left"
+          >
+            <div className="h-14 w-14 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors">
+              <FileText className="h-7 w-7" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-semibold text-white mb-1">Upload Previous Year Paper</h3>
+              <p className="text-slate-400 text-sm">Help juniors by sharing exam papers.</p>
+            </div>
+            <ArrowRight className="h-6 w-6 text-slate-500 group-hover:text-white group-hover:translate-x-1 transition-all" />
+          </button>
 
-                {/* Text Content */}
-                <div className="flex-1 text-left">
-                  <h3 className="text-xl font-bold text-white mb-1 group-hover:text-indigo-400 transition-colors">
-                    {option.title}
-                  </h3>
-                  <p className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">
-                    {option.description}
-                  </p>
-                </div>
+          {/* Card 2: Notes */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleUploadClick('notes');
+            }}
+            className="group relative flex items-center gap-6 p-6 rounded-2xl bg-slate-900/50 border border-white/10 backdrop-blur-xl hover:bg-slate-900/80 hover:border-indigo-500/50 hover:scale-[1.01] transition-all duration-300 cursor-pointer text-left"
+          >
+            <div className="h-14 w-14 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+              <Notebook className="h-7 w-7" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-semibold text-white mb-1">Upload Lecture Notes</h3>
+              <p className="text-slate-400 text-sm">Share your handwritten or digital notes.</p>
+            </div>
+            <ArrowRight className="h-6 w-6 text-slate-500 group-hover:text-white group-hover:translate-x-1 transition-all" />
+          </button>
 
-                {/* Arrow Icon */}
-                <ArrowRight className="w-6 h-6 text-slate-400 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all flex-shrink-0" />
-              </motion.button>
-            );
-          })}
         </div>
 
-        {/* Warning Notice */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="flex items-center justify-center gap-2 text-amber-400/80"
-        >
-          <AlertCircle className="w-4 h-4" />
-          <p className="text-sm">
-            Note: Always upload documents in PDF format.
-          </p>
-        </motion.div>
-      </motion.div>
+        {/* Warning */}
+        <div className="flex items-center justify-center gap-2 text-amber-400/80 bg-amber-900/10 p-3 rounded-full w-fit mx-auto border border-amber-900/20">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm font-medium">Note: Always upload documents in PDF format.</span>
+        </div>
 
-      {/* Upload Modal - Only loads when isModalOpen becomes true */}
+      </div>
+
+      {/* The Modal */}
       {isModalOpen && (
-        <UploadModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          uploadType={selectedType}
+        <UploadModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          type={uploadType} // Ensure your UploadModal component accepts this prop!
         />
       )}
     </div>

@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb', // Allow up to 10MB for PDF uploads
+    },
+  },
   images: {
     remotePatterns: [
       {
@@ -10,6 +15,11 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "avatars.githubusercontent.com",
+        pathname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "api.dicebear.com",
         pathname: "**",
       },
     ],

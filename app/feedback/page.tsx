@@ -1,14 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { MessageSquare, Send } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { MessageSquare, Send, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { createClient } from "@/utils/supabase/client";
+import type { User } from "@supabase/supabase-js";
+
+const STORAGE_KEY = "feedback_draft";
 
 export default function FeedbackPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [user, setUser] = useState<User | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     category: "",
     message: ""
   });
+  const supabase = createClient();
 
   const categories = [
     { value: "", label: "Select a category..." },
@@ -17,18 +27,93 @@ export default function FeedbackPage() {
     { value: "content", label: "Content Suggestion" }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Auth State Detection
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
+
+  // Restore Draft from sessionStorage
+  useEffect(() => {
+    const draft = sessionStorage.getItem(STORAGE_KEY);
+    if (draft) {
+      try {
+        const parsedDraft = JSON.parse(draft);
+        setFormData(parsedDraft);
+        // Clear draft after restoration
+        sessionStorage.removeItem(STORAGE_KEY);
+      } catch (error) {
+        console.error("Failed to restore draft:", error);
+      }
+    }
+  }, []);
+
+  // Smart Resume: Auto-submit after login redirect
+  useEffect(() => {
+    const action = searchParams.get("action");
+
+    if (action === "resume" && user && formData.category && formData.message) {
+      // User returned from login with draft data - auto-submit
+      submitFeedback();
+      // Clean up URL
+      router.replace("/feedback");
+    }
+  }, [searchParams, user]); // Don't include formData to avoid infinite loops
+
+  const submitFeedback = async () => {
+    if (!user) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // TODO: Insert feedback into Supabase table
+      const { error } = await supabase.from("feedback").insert({
+        user_id: user.id,
+        category: formData.category,
+        message: formData.message,
+        created_at: new Date().toISOString(),
+      });
+
+      if (error) throw error;
+
+      alert("Thank you for your feedback! We'll review it shortly.");
+      setFormData({ category: "", message: "" });
+    } catch (error) {
+      console.error("Feedback submission error:", error);
+      alert("Failed to submit feedback. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.category || !formData.message.trim()) {
       alert("Please fill in all fields.");
       return;
     }
 
-    // TODO: Implement feedback submission to Supabase
-    console.log("Feedback submitted:", formData);
-    alert("Thank you for your feedback! We'll review it shortly.");
-    setFormData({ category: "", message: "" });
+    // Auth Guard: Check if user is logged in
+    if (!user) {
+      // Save draft to sessionStorage
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+      // Redirect to login with smart resume URL
+      router.push("/login?next=/feedback?action=resume");
+      return;
+    }
+
+    // User is logged in - Submit immediately
+    await submitFeedback();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -78,7 +163,8 @@ export default function FeedbackPage() {
                 value={formData.category}
                 onChange={handleChange}
                 required
-                className="w-full bg-slate-950/50 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all cursor-pointer"
+                disabled={isSubmitting}
+                className="w-full bg-slate-950/50 border border-white/10 rounded-xl p-3 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {categories.map((cat) => (
                   <option 
@@ -103,8 +189,9 @@ export default function FeedbackPage() {
                 value={formData.message}
                 onChange={handleChange}
                 required
+                disabled={isSubmitting}
                 rows={8}
-                className="w-full bg-slate-950/50 border border-white/10 rounded-xl p-3 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all resize-none"
+                className="w-full bg-slate-950/50 border border-white/10 rounded-xl p-3 text-white placeholder:text-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all resize-none disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Describe your bug report, feature request, or content suggestion in detail..."
               />
             </div>
@@ -112,10 +199,20 @@ export default function FeedbackPage() {
             {/* Submit Button - Luminous Style */}
             <button
               type="submit"
-              className="w-full px-8 py-4 bg-indigo-600 text-white rounded-full hover:bg-indigo-500 transition-all font-medium text-lg shadow-lg hover:shadow-indigo-500/50 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 border-t border-white/20"
+              disabled={isSubmitting}
+              className="w-full px-8 py-4 bg-indigo-600 text-white rounded-full hover:bg-indigo-500 transition-all font-medium text-lg shadow-lg hover:shadow-indigo-500/50 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 border-t border-white/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              <Send className="w-5 h-5" />
-              Submit Feedback
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5" />
+                  Submit Feedback
+                </>
+              )}
             </button>
           </form>
         </motion.div>

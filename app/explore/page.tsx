@@ -1,7 +1,16 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect } from "react";
 import { FileText, BookOpen } from "lucide-react";
+import { logVisit } from "@/utils/analytics";
 
 export default function ExplorePage() {
+  // Log page visit on mount
+  useEffect(() => {
+    logVisit("explore");
+  }, []);
+
   const resourceCards = [
     {
       title: "Previous Year Papers",

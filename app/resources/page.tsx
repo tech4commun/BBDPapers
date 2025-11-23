@@ -2,8 +2,10 @@
 
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { Search, BookOpen, FileText, GraduationCap } from "lucide-react";
+import { Search, BookOpen, FileText, GraduationCap, Download } from "lucide-react";
 import Combobox from "@/components/Combobox";
+import { searchResources } from "./actions";
+import { toast } from "sonner";
 
 // BBDU Syllabus Data Structure
 const bbduCourses = [
@@ -131,6 +133,8 @@ export default function ResourcesPage() {
   const [branch, setBranch] = useState("");
   const [semester, setSemester] = useState("");
   const [subject, setSubject] = useState("");
+  const [results, setResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Get available options based on selections
   const selectedCourse = bbduCourses.find(c => c.id === course);
@@ -164,16 +168,34 @@ export default function ResourcesPage() {
     setSubject("");
   };
 
-  const handleFindResources = () => {
-    if (!isFormComplete) return;
+  const handleFindResources = async () => {
+    if (!isFormComplete || !resourceType) return;
     
-    // TODO: Implement resource fetching logic
-    console.log("Searching resources:", { course, branch, semester, subject, resourceType });
-    alert(`Searching for ${resourceType === "pyq" ? "Previous Year Papers" : "Lecture Notes"}
-Course: ${selectedCourse?.name}
-Branch: ${selectedBranch?.name}
-Semester: ${selectedSemester?.name}
-Subject: ${subject}`);
+    setIsSearching(true);
+    try {
+      const result = await searchResources({
+        type: resourceType as "notes" | "pyq",
+        branch: selectedBranch?.name || "",
+        semester: selectedSemester?.name || "",
+        subject: subject
+      });
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      setResults(result.results);
+      
+      if (result.results.length === 0) {
+        toast.info("No resources found. Try different filters.");
+      } else {
+        toast.success(`Found ${result.results.length} resource(s)`);
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -276,10 +298,11 @@ Subject: ${subject}`);
               <div className="pt-6 animate-fade-in">
                 <button
                   onClick={handleFindResources}
-                  className="w-full px-6 md:px-8 py-4 md:py-5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-lg md:text-xl font-bold rounded-2xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-2xl hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 animate-pulse-slow"
+                  disabled={isSearching}
+                  className="w-full px-6 md:px-8 py-4 md:py-5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-lg md:text-xl font-bold rounded-2xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-2xl hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Search className="w-5 h-5 md:w-6 md:h-6" />
-                  Search Resources
+                  {isSearching ? "Searching..." : "Search Resources"}
                 </button>
               </div>
             )}
@@ -300,6 +323,46 @@ Subject: ${subject}`);
             )}
           </div>
         </div>
+
+        {/* Results Section */}
+        {results.length > 0 && (
+          <div className="mt-8 space-y-4">
+            <h2 className="text-2xl font-bold text-white mb-4">
+              {results.length} Result{results.length !== 1 ? 's' : ''} Found
+            </h2>
+            
+            {results.map((note) => (
+              <div
+                key={note.id}
+                className="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-indigo-500/30 transition-all"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-white mb-2">{note.title}</h3>
+                    <div className="flex flex-wrap gap-3 text-sm text-slate-400">
+                      <span className="bg-white/5 px-3 py-1 rounded-full">{note.subject}</span>
+                      <span className="bg-white/5 px-3 py-1 rounded-full">{note.branch}</span>
+                      <span className="bg-white/5 px-3 py-1 rounded-full">{note.semester}</span>
+                      <span className="bg-white/5 px-3 py-1 rounded-full">
+                        {(note.size / 1024 / 1024).toFixed(2)} MB
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <a
+                    href={note.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

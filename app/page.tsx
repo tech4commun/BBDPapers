@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useEffect } from "react";
 import HeroSearch from "@/components/HeroSearch";
 import FloatingCornerIcons from "@/components/FloatingCornerIcons";
+import { logVisit } from "@/utils/analytics";
 
 // Animation variants for staggered children
-const container = {
+const container: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -18,19 +20,24 @@ const container = {
   }
 };
 
-const item = {
+const item: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: { 
     opacity: 1, 
     y: 0,
     transition: {
       duration: 0.5,
-      ease: "easeOut"
+      ease: [0.4, 0.0, 0.2, 1] as const // easeOut cubic-bezier
     }
   }
 };
 
 export default function Home() {
+  // Log page visit on mount
+  useEffect(() => {
+    logVisit("home");
+  }, []);
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 md:px-8 relative">
       {/* Floating Corner Icons - Behind Hero Text */}

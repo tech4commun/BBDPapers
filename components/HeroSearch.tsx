@@ -4,13 +4,14 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useDebounce } from "use-debounce";
 import { Search, FileText, BookOpen } from "lucide-react";
-import { getSearchSuggestions } from "@/app/actions";
+import { getSearchSuggestions, getDownloadUrl } from "@/app/actions";
 
 interface SearchSuggestion {
   id: string;
   title: string;
   type: "notes" | "pyq";
   subject: string;
+  file_path: string;
 }
 
 export default function HeroSearch() {
@@ -97,9 +98,9 @@ export default function HeroSearch() {
       case "Enter":
         e.preventDefault();
         if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-          router.push(`/resources/${suggestions[selectedIndex].id}`);
+          handleSuggestionSelect(suggestions[selectedIndex].file_path);
         } else if (query.trim()) {
-          router.push(`/search?q=${encodeURIComponent(query)}`);
+          router.push(`/resources?search=${encodeURIComponent(query)}`);
         }
         break;
       case "Escape":
@@ -110,8 +111,13 @@ export default function HeroSearch() {
   }
 
   // Handle suggestion click (using onMouseDown to prevent blur issues)
-  function handleSuggestionSelect(id: string) {
-    router.push(`/resources/${id}`);
+  async function handleSuggestionSelect(filePath: string) {
+    const { url, error } = await getDownloadUrl(filePath);
+    if (url) {
+      window.open(url, '_blank');
+    } else {
+      console.error('Failed to get download URL:', error);
+    }
   }
 
   return (
@@ -152,7 +158,7 @@ export default function HeroSearch() {
             return (
               <button
                 key={suggestion.id}
-                onMouseDown={() => handleSuggestionSelect(suggestion.id)}
+                onMouseDown={() => handleSuggestionSelect(suggestion.file_path)}
                 onMouseEnter={() => setSelectedIndex(index)}
                 className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-colors ${
                   isSelected
