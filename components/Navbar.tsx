@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
@@ -37,8 +38,18 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 gap-4">
           {/* Logo (Left) */}
-          <Link href="/" className="flex items-center flex-shrink-0">
-            <span className="text-2xl font-bold text-blue-400">BBD Notes</span>
+          <Link 
+            href="/" 
+            className="flex items-center flex-shrink-0"
+          >
+            <Image
+              src="/logo.png"
+              alt="BBD Notes Logo"
+              width={500}
+              height={100}
+              priority
+              className="h-12 md:h-20 w-auto object-contain hover:scale-105 transition-transform duration-300"
+            />
           </Link>
 
           {/* Compact Search (Center) - Hidden on Mobile & Homepage with Animation */}
@@ -120,13 +131,19 @@ export default function Navbar() {
 
               {/* Centered Content - No Scrollbars */}
               <div className="flex flex-col justify-center items-center h-full gap-8 px-6">
-                {/* Logo - Crisp and Clean */}
+                {/* Logo - Centerpiece */}
                 <Link 
                   href="/" 
-                  className="text-2xl font-bold tracking-tight text-white mb-4"
+                  className="hover:scale-105 transition-transform duration-300"
                   onClick={() => setIsOpen(false)}
                 >
-                  BBD Notes
+                  <Image
+                    src="/logo.png"
+                    alt="BBD Notes Logo"
+                    width={400}
+                    height={80}
+                    className="h-16 w-auto object-contain"
+                  />
                 </Link>
 
                 {/* Navigation Links with Center-Out Underline */}
