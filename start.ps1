@@ -2,7 +2,7 @@
 Write-Host "Starting BBD Papers development server..." -ForegroundColor Cyan
 
 # Start the dev server in the background
-$devServer = Start-Process pwsh -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot'; npm run dev" -PassThru
+$devServer = Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$PSScriptRoot'; npm run dev" -PassThru
 
 # Wait for the server to be ready
 Write-Host "Waiting for server to start..." -ForegroundColor Yellow

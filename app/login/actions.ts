@@ -19,10 +19,14 @@ export async function loginWithGoogle(nextUrl?: string) {
   const headersList = await headers();
   const origin = headersList.get("origin") || "http://localhost:3000";
 
+  console.log("🔵 loginWithGoogle - nextUrl received:", nextUrl); // Debug log
+
   // Build callback URL with next param if provided
   const callbackUrl = nextUrl
     ? `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`
     : `${origin}/auth/callback`;
+
+  console.log("🔵 loginWithGoogle - callbackUrl:", callbackUrl); // Debug log
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -56,10 +60,14 @@ export async function loginWithGitHub(nextUrl?: string) {
   const headersList = await headers();
   const origin = headersList.get("origin") || "http://localhost:3000";
 
+  console.log("🔵 loginWithGitHub - nextUrl received:", nextUrl); // Debug log
+
   // Build callback URL with next param if provided
   const callbackUrl = nextUrl
     ? `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`
     : `${origin}/auth/callback`;
+
+  console.log("🔵 loginWithGitHub - callbackUrl:", callbackUrl); // Debug log
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",

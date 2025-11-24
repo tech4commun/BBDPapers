@@ -37,12 +37,24 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // 2. GUEST ONLY GUARD (The Fix for "Schrödinger's User")
-  // If user is logged in AND tries to go to /login, kick them to /explore
+  // If user is logged in AND tries to go to /login, kick them to explore or their intended destination
   if (user && request.nextUrl.pathname.startsWith("/login")) {
-    return NextResponse.redirect(new URL("/explore", request.url));
+    const next = request.nextUrl.searchParams.get("next");
+    const redirectUrl = next || "/explore";
+    return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
-  // 3. ADMIN GUARD
+  // 3. PROTECTED ROUTES GUARD (Upload requires authentication)
+  if (request.nextUrl.pathname.startsWith("/upload")) {
+    if (!user) {
+      // Preserve the intended destination
+      return NextResponse.redirect(
+        new URL(`/login?next=/upload`, request.url)
+      );
+    }
+  }
+
+  // 4. ADMIN GUARD
   if (request.nextUrl.pathname.startsWith("/admin")) {
     // If no user, kick to login
     if (!user) {
