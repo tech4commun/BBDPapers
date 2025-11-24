@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { next?: string };
+  searchParams: Promise<{ next?: string }>;
 }) {
   // Server-side session check - redirect logged-in users
   const supabase = await createClient();
@@ -16,12 +16,15 @@ export default async function LoginPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // IF USER EXISTS, KICK THEM OUT (return ensures immediate execution)
-  if (user) {
-    return redirect("/explore");
-  }
+  const params = await searchParams;
+  const nextUrl = params.next;
 
-  const nextUrl = searchParams.next;
+  console.log("🔵 Login Page - nextUrl from searchParams:", nextUrl); // Debug log
+
+  // IF USER EXISTS, KICK THEM OUT to their intended destination
+  if (user) {
+    return redirect(nextUrl || "/explore");
+  }
 
   return <LoginForm nextUrl={nextUrl} />;
 }

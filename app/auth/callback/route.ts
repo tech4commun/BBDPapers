@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get("code");
   const next = requestUrl.searchParams.get("next") ?? "/explore";
 
+  console.log("🔵 Auth Callback - next param:", next); // Debug log
+
   if (code) {
     const supabase = await createClient();
 
@@ -27,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     if (!error) {
       // Success: Redirect to the intended destination
-      // Middleware will handle session refresh automatically
+      console.log("✅ Auth success - redirecting to:", next); // Debug log
       return NextResponse.redirect(new URL(next, requestUrl.origin));
     }
 

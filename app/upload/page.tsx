@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { FileText, Notebook, AlertCircle, ArrowRight } from 'lucide-react';
@@ -14,7 +14,30 @@ const UploadModal = dynamic(() => import('@/components/UploadModal'), {
 export default function UploadPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploadType, setUploadType] = useState<'notes' | 'pyq'>('notes');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const router = useRouter();
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        // Redirect to login with return URL
+        router.push('/login?next=/upload');
+      } else {
+        setIsAuthenticated(true);
+      }
+      setIsCheckingAuth(false);
+    };
+
+    checkAuth();
+  }, [router, supabase.auth]);
 
   const handleUploadClick = (type: 'notes' | 'pyq') => {
     console.log("🔵 Button clicked:", type);
@@ -24,6 +47,23 @@ export default function UploadPage() {
     setIsModalOpen(true);
     console.log("🔵 Modal opened");
   };
+
+  // Show loading state while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="text-slate-400">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render the page if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 pt-32 pb-12 px-4 md:px-8">
