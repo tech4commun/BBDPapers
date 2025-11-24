@@ -20,42 +20,42 @@ const bbduCourses = [
           {
             id: "sem1",
             name: "Semester 1",
-            subjects: ["Engineering Math-I", "Engineering Physics", "Basic Electrical Eng", "Professional Comm", "C Programming"]
+            subjects: ["Matrices and Calculus", "Computer Concepts & Programming in C", "Engineering Physics", "Engineering Mechanics", "Basic Electronics Engineering", "Environmental Studies", "Basic Electrical Engineering", "Engineering Chemistry", "Basics of Artificial Intelligence", "Communicative English"]
           },
           {
             id: "sem2",
             name: "Semester 2",
-            subjects: ["Engineering Math-II", "Engineering Chemistry", "Basic Electronics", "Environmental Science", "Data Structures (C)"]
+            subjects: ["Differential Equations and Fourier Analysis", "Programming Concepts with Python", "Engineering Physics", "Engineering Mechanics", "Basic Electronics Engineering", "Environmental Studies", "Basic Electrical Engineering", "Engineering Chemistry", "Basics of Artificial Intelligence", "Communicative English"]
           },
           {
             id: "sem3",
             name: "Semester 3",
-            subjects: ["Discrete Structures", "Computer Org & Arch", "Digital Logic Design", "Object Oriented Prog (Java)", "Industrial Sociology"]
+            subjects: ["Organizational Behavior", "Industrial Sociology", "Complex Analysis and Integral Transforms", "Discrete Mathematics", "Data Structure using 'C'", "Digital Logic Design", "Core and Advance Java", "Indian Constitution"]
           },
           {
             id: "sem4",
             name: "Semester 4",
-            subjects: ["Operating Systems", "Introduction to Microprocessor", "Software Engineering", "Graph Theory", "Universal Human Values"]
+            subjects: ["Statistical and Numerical Techniques", "Database Management Systems", "Operating Systems", "Software Engineering", "Computer Organization & Architecture"]
           },
           {
             id: "sem5",
             name: "Semester 5",
-            subjects: ["Database Management Systems", "Design & Analysis of Algorithms", "Theory of Automata", "Web Technology", "Engineering Economics"]
+            subjects: ["Engineering & Managerial Economics", "Microprocessor and Interfacing", "Computer Networks", "Automata Theory and Formal Languages", "Computer Graphics", "Essence of Indian Knowledge Tradition"]
           },
           {
             id: "sem6",
             name: "Semester 6",
-            subjects: ["Compiler Design", "Computer Networks", "Data Warehousing & Mining", "Advanced Java", "Industrial Management"]
+            subjects: ["Industrial Management", "Design & Analysis of Algorithms", "Compiler Design", "Professional Elective-I", "Professional Elective-II"]
           },
           {
             id: "sem7",
             name: "Semester 7",
-            subjects: ["Distributed Systems", "Artificial Intelligence", "Cryptography & Network Security", "Cloud Computing", "Project Phase-I"]
+            subjects: ["Distributed Systems", "Soft Computing", "Professional Elective-III", "Open Elective-I"]
           },
           {
             id: "sem8",
             name: "Semester 8",
-            subjects: ["Mobile Computing", "Machine Learning", "Digital Image Processing", "Project Phase-II", "Grand Viva"]
+            subjects: ["Essentials of Machine Learning", "Professional Elective-IV", "Open Elective-II"]
           }
         ]
       },
@@ -199,7 +199,7 @@ export default function ResourcesPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] px-4 md:px-6 py-12">
+    <div className="min-h-screen px-4 md:px-6 py-12 pt-32">
       <div className="max-w-4xl mx-auto">
         {/* Glassmorphic Header */}
         <div className="text-center mb-12">

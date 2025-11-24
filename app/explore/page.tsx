@@ -29,7 +29,7 @@ export default function ExplorePage() {
   ];
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 md:px-6 py-12">
+    <div className="min-h-screen flex items-center justify-center px-4 md:px-6 py-12 pt-32">
       <div className="max-w-6xl mx-auto w-full">
         {/* Page Header */}
         <div className="text-center mb-12">
