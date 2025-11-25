@@ -7,10 +7,15 @@ interface SaveNoteData {
   fileName: string;
   type: "notes" | "pyq";
   title: string;
+  course: string;
   branch: string;
   semester: string;
   subject: string;
   fileHash: string; // SHA-256 hash for duplicate detection
+  // PYQ-specific fields (optional)
+  examType?: string; // sessional or semester
+  academicYear?: string; // e.g., 2024-25
+  semesterType?: string; // even or odd
 }
 
 export async function saveNoteToDB(data: SaveNoteData) {
@@ -90,8 +95,15 @@ export async function saveNoteToDB(data: SaveNoteData) {
       size: data.file.size,
       user_id: user.id,
       is_approved: false, // Still needs admin approval
+      course: data.course, // User-provided course
       branch: data.branch, // User-provided branch
       semester: data.semester, // User-provided semester
+      // PYQ-specific fields (only for PYQ type)
+      ...(data.type === 'pyq' && {
+        exam_type: data.examType || null,
+        academic_year: data.academicYear || null,
+        semester_type: data.semesterType || null,
+      }),
     };
 
     console.log("📝 Inserting into notes table:", insertData);

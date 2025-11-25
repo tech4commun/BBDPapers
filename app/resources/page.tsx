@@ -184,12 +184,20 @@ export default function ResourcesPage() {
         throw new Error(result.error);
       }
 
-      setResults(result.results);
-      
       if (result.results.length === 0) {
         toast.info("No resources found. Try different filters.");
       } else {
-        toast.success(`Found ${result.results.length} resource(s)`);
+        // Store results in sessionStorage and navigate to results page
+        sessionStorage.setItem('search_results', JSON.stringify({
+          results: result.results,
+          filters: {
+            type: resourceType,
+            branch: selectedBranch?.name || "",
+            semester: selectedSemester?.name || "",
+            subject: subject
+          }
+        }));
+        window.location.href = '/results';
       }
     } catch (e: any) {
       toast.error(e.message);
@@ -324,45 +332,7 @@ export default function ResourcesPage() {
           </div>
         </div>
 
-        {/* Results Section */}
-        {results.length > 0 && (
-          <div className="mt-8 space-y-4">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              {results.length} Result{results.length !== 1 ? 's' : ''} Found
-            </h2>
-            
-            {results.map((note) => (
-              <div
-                key={note.id}
-                className="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-indigo-500/30 transition-all"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-white mb-2">{note.title}</h3>
-                    <div className="flex flex-wrap gap-3 text-sm text-slate-400">
-                      <span className="bg-white/5 px-3 py-1 rounded-full">{note.subject}</span>
-                      <span className="bg-white/5 px-3 py-1 rounded-full">{note.branch}</span>
-                      <span className="bg-white/5 px-3 py-1 rounded-full">{note.semester}</span>
-                      <span className="bg-white/5 px-3 py-1 rounded-full">
-                        {(note.size / 1024 / 1024).toFixed(2)} MB
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <a
-                    href={note.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Results moved to /results page */}
       </div>
     </div>
   );
