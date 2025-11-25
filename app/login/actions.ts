@@ -137,6 +137,8 @@ export async function signOut() {
   // 3. Clear Next.js Cache so the Navbar updates immediately
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/", "layout");
+  
+  return { success: true };
 
   // 4. No redirect - user stays on current page
   // The navbar will update automatically via auth state listener
