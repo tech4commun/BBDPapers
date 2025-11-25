@@ -44,15 +44,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
-  // 3. PROTECTED ROUTES GUARD (Upload requires authentication)
-  if (request.nextUrl.pathname.startsWith("/upload")) {
-    if (!user) {
-      // Preserve the intended destination
-      return NextResponse.redirect(
-        new URL(`/login?next=/upload`, request.url)
-      );
-    }
-  }
+  // 3. REMOVED: /upload is now public - authentication checked in UploadModal when user clicks upload button
 
   // 4. ADMIN GUARD
   if (request.nextUrl.pathname.startsWith("/admin")) {
