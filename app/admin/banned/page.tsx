@@ -7,12 +7,13 @@ import Image from "next/image";
 import { ShieldAlert, ShieldCheck, UserX, CheckCircle } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { unbanEmail } from "@/app/actions/banned-emails";
 
 // Unban User Server Action
-async function unbanUser(userId: string) {
+async function unbanUser(userId: string, userEmail: string) {
   "use server";
   
-  console.log('🔓 [UNBAN ACTION] Triggered:', { userId });
+  console.log('🔓 [UNBAN ACTION] Triggered:', { userId, userEmail });
   
   try {
     const supabase = await createClient();
@@ -48,6 +49,9 @@ async function unbanUser(userId: string) {
       console.error('❌ [UNBAN ACTION] Database error:', error);
       throw error;
     }
+    
+    // Remove email from banned_emails table
+    await unbanEmail(userEmail);
     
     console.log('✅ [UNBAN ACTION] Success:', { userId, newStatus: false });
     
@@ -186,7 +190,7 @@ export default async function BannedUsersPage() {
 
                     {/* Actions */}
                     <td className="px-6 py-4">
-                      <form action={unbanUser.bind(null, profile.id)}>
+                      <form action={unbanUser.bind(null, profile.id, profile.email)}>
                         <button
                           type="submit"
                           className="px-4 py-2 rounded-lg font-medium text-sm transition-all bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"

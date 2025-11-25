@@ -8,12 +8,13 @@ import { ShieldCheck, ShieldAlert, Ban, CheckCircle, AlertTriangle } from "lucid
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
+import { banEmail } from "@/app/actions/banned-emails";
 
 // Toggle Ban Server Action
-async function toggleBan(userId: string, currentBanStatus: boolean) {
+async function toggleBan(userId: string, currentBanStatus: boolean, userEmail: string) {
   "use server";
   
-  console.log('🚨 [BAN ACTION] Triggered:', { userId, currentBanStatus });
+  console.log('🚨 [BAN ACTION] Triggered:', { userId, currentBanStatus, userEmail });
   
   try {
     const supabase = await createClient();
@@ -50,9 +51,15 @@ async function toggleBan(userId: string, currentBanStatus: boolean) {
       throw error;
     }
     
+    // If banning, add email to banned_emails table
+    if (!currentBanStatus) {
+      await banEmail(userEmail, userId, "Banned by administrator");
+    }
+    
     console.log('✅ [BAN ACTION] Success:', { userId, newStatus: !currentBanStatus });
     
     revalidatePath("/admin/users");
+    revalidatePath("/admin/banned");
     return { success: true };
   } catch (error) {
     console.error('💥 [BAN ACTION] Failed:', error);
@@ -212,7 +219,7 @@ export default async function UsersPage() {
                     {/* Actions */}
                     <td className="px-6 py-4">
                       {!profile.is_admin && (
-                        <form action={toggleBan.bind(null, profile.id, profile.is_banned)}>
+                        <form action={toggleBan.bind(null, profile.id, profile.is_banned, profile.email)}>
                           <button
                             type="submit"
                             className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
