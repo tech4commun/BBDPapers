@@ -98,6 +98,11 @@ export default function UploadModal({ isOpen, onClose, type }: UploadModalProps)
   const [semester, setSemester] = useState('');
   const [subject, setSubject] = useState('');
 
+  // PYQ-specific fields
+  const [examType, setExamType] = useState(''); // sessional or semester
+  const [academicYear, setAcademicYear] = useState(''); // e.g., 2024-25
+  const [semesterType, setSemesterType] = useState(''); // even or odd
+
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -132,15 +137,13 @@ export default function UploadModal({ isOpen, onClose, type }: UploadModalProps)
     setSubject('');
   };
 
-  // Check authentication status on mount
+  // Check authentication status on mount and when modal opens
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setIsAuthenticated(!!user);
     };
-    if (isOpen) {
-      checkAuth();
-    }
+    checkAuth();
   }, [isOpen, supabase.auth]);
 
   // Restore file AND metadata from sessionStorage after login
@@ -162,6 +165,12 @@ export default function UploadModal({ isOpen, onClose, type }: UploadModalProps)
             setBranch(metadata.branch || '');
             setSemester(metadata.semester || '');
             setSubject(metadata.subject || '');
+            // Restore PYQ-specific fields
+            if (type === 'pyq') {
+              setExamType(metadata.examType || '');
+              setAcademicYear(metadata.academicYear || '');
+              setSemesterType(metadata.semesterType || '');
+            }
           }
           
           // Convert data URL back to File
@@ -227,6 +236,19 @@ export default function UploadModal({ isOpen, onClose, type }: UploadModalProps)
   };
 
   const handleUpload = async () => {
+    console.log('🎯 Upload button clicked', {
+      file: !!file,
+      title: title.trim(),
+      course,
+      branch,
+      semester,
+      subject,
+      type,
+      examType,
+      academicYear,
+      semesterType
+    });
+
     if (!file) {
       toast.error('Please select a file first');
       return;
@@ -238,7 +260,15 @@ export default function UploadModal({ isOpen, onClose, type }: UploadModalProps)
       return;
     }
     if (!course || !branch || !semester || !subject) {
+      console.log('❌ Missing required fields:', { course, branch, semester, subject });
       toast.error('Please fill in all the details (Course, Branch, Semester, Subject)');
+      return;
+    }
+
+    // Validate PYQ-specific fields ONLY for PYQ type
+    if (type === 'pyq' && (!examType || !academicYear || !semesterType)) {
+      console.log('❌ Missing PYQ fields:', { examType, academicYear, semesterType });
+      toast.error('Please fill in all PYQ details (Exam Type, Academic Year, Semester Type)');
       return;
     }
 
@@ -246,37 +276,53 @@ export default function UploadModal({ isOpen, onClose, type }: UploadModalProps)
     if (!isAuthenticated) {
       console.log('🔒 User not authenticated, showing login prompt');
       
-      // Save metadata
-      const metadata = { title, course, branch, semester, subject };
-      sessionStorage.setItem('pendingUploadMetadata', JSON.stringify(metadata));
-      
-      // Save file to sessionStorage (only metadata + small data URL for files < 2MB)
-      if (file.size < 2 * 1024 * 1024) { // Less than 2MB
-        try {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const fileData = {
-              name: file.name,
-              size: file.size,
-              lastModified: file.lastModified,
-              dataUrl: reader.result as string
-            };
-            sessionStorage.setItem('pendingUploadFileData', JSON.stringify(fileData));
-            sessionStorage.setItem('pendingUploadType', type);
-            console.log('💾 Saved file and metadata to session storage');
-          };
-          reader.readAsDataURL(file);
-        } catch (e) {
-          console.error('Failed to save file:', e);
-        }
+      // Double-check auth status to avoid race condition
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // User is actually logged in, just update state and continue
+        setIsAuthenticated(true);
+        // Don't show login prompt, just proceed with upload
       } else {
-        // For large files, just save metadata
-        sessionStorage.setItem('pendingUploadType', type);
-        toast.info('Please select your file again after logging in');
+        // User is not logged in, show login prompt
+        // Save metadata (including PYQ fields)
+        const metadata = { 
+          title, 
+          course, 
+          branch, 
+          semester, 
+          subject,
+          ...(type === 'pyq' && { examType, academicYear, semesterType })
+        };
+        sessionStorage.setItem('pendingUploadMetadata', JSON.stringify(metadata));
+        
+        // Save file to sessionStorage (only metadata + small data URL for files < 2MB)
+        if (file.size < 2 * 1024 * 1024) { // Less than 2MB
+          try {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const fileData = {
+                name: file.name,
+                size: file.size,
+                lastModified: file.lastModified,
+                dataUrl: reader.result as string
+              };
+              sessionStorage.setItem('pendingUploadFileData', JSON.stringify(fileData));
+              sessionStorage.setItem('pendingUploadType', type);
+              console.log('💾 Saved file and metadata to session storage');
+            };
+            reader.readAsDataURL(file);
+          } catch (e) {
+            console.error('Failed to save file:', e);
+          }
+        } else {
+          // For large files, just save metadata
+          sessionStorage.setItem('pendingUploadType', type);
+          toast.info('Please select your file again after logging in');
+        }
+        
+        setShowLoginPrompt(true);
+        return;
       }
-      
-      setShowLoginPrompt(true);
-      return;
     }
 
     setIsUploading(true);
@@ -288,6 +334,15 @@ export default function UploadModal({ isOpen, onClose, type }: UploadModalProps)
 
     try {
       console.log("🚀 Starting upload process...");
+      console.log("📋 Selected values:", {
+        course,
+        selectedCourse: selectedCourse?.name,
+        branch,
+        selectedBranch: selectedBranch?.name,
+        semester,
+        selectedSemester: selectedSemester?.name,
+        subject
+      });
       
       // 1. Calculate file hash for duplicate detection
       console.log("🔐 Calculating file hash...");
@@ -301,21 +356,46 @@ export default function UploadModal({ isOpen, onClose, type }: UploadModalProps)
 
       // 3. Save to DB (Server Action handles storage + auth + duplicate check)
       console.log("💾 Uploading to server...");
-      const result = await saveNoteToDB({
+      const uploadData = {
         file: optimizedFile,
         fileName: file.name,
         type: type,
         title: title.trim(),
+        course: selectedCourse?.name || '',
         branch: selectedBranch?.name || '',
         semester: selectedSemester?.name || '',
         subject: subject,
-        fileHash: fileHash // Send hash for server-side duplicate check
+        fileHash: fileHash,
+        // PYQ-specific fields
+        ...(type === 'pyq' && {
+          examType,
+          academicYear,
+          semesterType
+        })
+      };
+      
+      console.log("📤 Sending data to server:", {
+        ...uploadData,
+        file: '[File Object]',
+        fileHash: fileHash.substring(0, 16) + '...'
       });
+      
+      const result = await saveNoteToDB(uploadData);
       console.log("📊 Database result:", result);
 
       if (!result.success) {
         console.error("❌ Database save failed:", result.error);
         clearTimeout(uploadTimeout);
+        
+        // Show detailed error to user
+        if (result.error.includes('course')) {
+          toast.error("Database Error: 'course' column is missing. Please run the migration script.");
+        } else if (result.error.includes('duplicate')) {
+          toast.error("This file has already been uploaded!");
+        } else {
+          toast.error(`Upload Failed: ${result.error}`);
+        }
+        
         throw new Error(result.error || "Failed to save to database");
       }
 
@@ -514,77 +594,137 @@ export default function UploadModal({ isOpen, onClose, type }: UploadModalProps)
                     />
                   </div>
 
-                  {/* Course Dropdown */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
-                      Course <span className="text-red-400">*</span>
-                    </label>
-                    <select
-                      value={course}
-                      onChange={(e) => handleCourseChange(e.target.value)}
-                      className="w-full px-4 py-2 bg-slate-950 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
-                    >
-                      <option value="">Select course...</option>
-                      {bbduCourses.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
+                  {/* Course and Branch - Grid Layout */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                        Course <span className="text-red-400">*</span>
+                      </label>
+                      <select
+                        value={course}
+                        onChange={(e) => handleCourseChange(e.target.value)}
+                        className="w-full px-4 py-2 bg-slate-950 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                      >
+                        <option value="">Select course...</option>
+                        {bbduCourses.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Branch Dropdown */}
+                    {course && (
+                      <div className="animate-fade-in">
+                        <label className="block text-sm font-medium text-slate-300 mb-2">
+                          Branch <span className="text-red-400">*</span>
+                        </label>
+                        <select
+                          value={branch}
+                          onChange={(e) => handleBranchChange(e.target.value)}
+                          className="w-full px-4 py-2 bg-slate-950 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                        >
+                          <option value="">Select branch...</option>
+                          {availableBranches.map((b) => (
+                            <option key={b.id} value={b.id}>{b.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Branch Dropdown */}
-                  {course && (
-                    <div className="animate-fade-in">
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Branch <span className="text-red-400">*</span>
-                      </label>
-                      <select
-                        value={branch}
-                        onChange={(e) => handleBranchChange(e.target.value)}
-                        className="w-full px-4 py-2 bg-slate-950 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
-                      >
-                        <option value="">Select branch...</option>
-                        {availableBranches.map((b) => (
-                          <option key={b.id} value={b.id}>{b.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Semester Dropdown */}
+                  {/* Semester and Subject - Grid Layout */}
                   {branch && (
-                    <div className="animate-fade-in">
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Semester <span className="text-red-400">*</span>
-                      </label>
-                      <select
-                        value={semester}
-                        onChange={(e) => handleSemesterChange(e.target.value)}
-                        className="w-full px-4 py-2 bg-slate-950 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
-                      >
-                        <option value="">Select semester...</option>
-                        {availableSemesters.map((s) => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                      </select>
+                    <div className="grid grid-cols-2 gap-4 animate-fade-in">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">
+                          Semester <span className="text-red-400">*</span>
+                        </label>
+                        <select
+                          value={semester}
+                          onChange={(e) => handleSemesterChange(e.target.value)}
+                          className="w-full px-4 py-2 bg-slate-950 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                        >
+                          <option value="">Select semester...</option>
+                          {availableSemesters.map((s) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Subject Dropdown */}
+                      {semester && (
+                        <div className="animate-fade-in">
+                          <label className="block text-sm font-medium text-slate-300 mb-2">
+                            Subject <span className="text-red-400">*</span>
+                          </label>
+                          <select
+                            value={subject}
+                            onChange={(e) => setSubject(e.target.value)}
+                            className="w-full px-4 py-2 bg-slate-950 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                          >
+                            <option value="">Select subject...</option>
+                            {availableSubjects.map((subj, index) => (
+                              <option key={index} value={subj}>{subj}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* Subject Dropdown */}
-                  {semester && (
-                    <div className="animate-fade-in">
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Subject <span className="text-red-400">*</span>
-                      </label>
-                      <select
-                        value={subject}
-                        onChange={(e) => setSubject(e.target.value)}
-                        className="w-full px-4 py-2 bg-slate-950 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
-                      >
-                        <option value="">Select subject...</option>
-                        {availableSubjects.map((subj, index) => (
-                          <option key={index} value={subj}>{subj}</option>
-                        ))}
-                      </select>
+                  {/* PYQ-Specific Fields - Grid Layout */}
+                  {type === 'pyq' && subject && (
+                    <div className="grid grid-cols-3 gap-4 animate-fade-in">
+                      {/* Exam Type Dropdown */}
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">
+                          Exam Type <span className="text-red-400">*</span>
+                        </label>
+                        <select
+                          value={examType}
+                          onChange={(e) => setExamType(e.target.value)}
+                          className="w-full px-4 py-2 bg-slate-950 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                        >
+                          <option value="">Select exam type...</option>
+                          <option value="sessional">Sessional</option>
+                          <option value="semester">Semester</option>
+                        </select>
+                      </div>
+
+                      {/* Academic Year Dropdown */}
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">
+                          Academic Year <span className="text-red-400">*</span>
+                        </label>
+                        <select
+                          value={academicYear}
+                          onChange={(e) => setAcademicYear(e.target.value)}
+                          className="w-full px-4 py-2 bg-slate-950 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                        >
+                          <option value="">Select academic year...</option>
+                          <option value="2024-25">2024-25</option>
+                          <option value="2023-24">2023-24</option>
+                          <option value="2022-23">2022-23</option>
+                          <option value="2021-22">2021-22</option>
+                          <option value="2020-21">2020-21</option>
+                        </select>
+                      </div>
+
+                      {/* Semester Type Dropdown */}
+                      <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">
+                          Semester Type <span className="text-red-400">*</span>
+                        </label>
+                        <select
+                          value={semesterType}
+                          onChange={(e) => setSemesterType(e.target.value)}
+                          className="w-full px-4 py-2 bg-slate-950 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none"
+                        >
+                          <option value="">Select semester type...</option>
+                          <option value="even">Even Semester</option>
+                          <option value="odd">Odd Semester</option>
+                        </select>
+                      </div>
                     </div>
                   )}
                 </div>
