@@ -37,8 +37,14 @@ export default async function AdminLayout({
   const result = await getPendingContent();
   const pendingCount = result.data?.length || 0;
 
+  // Fetch banned users count for sidebar badge
+  const { count: bannedCount } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
+    .eq("is_banned", true);
+
   return (
-    <AdminLayoutWrapper pendingCount={pendingCount}>
+    <AdminLayoutWrapper pendingCount={pendingCount} bannedCount={bannedCount || 0}>
       {children}
     </AdminLayoutWrapper>
   );

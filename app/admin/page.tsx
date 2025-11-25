@@ -57,7 +57,7 @@ export default async function AdminDashboard() {
 
   // Fetch recent activity (last 5 uploaded notes)
   const supabase = await createClient();
-  const { data: recentNotesRaw } = await supabase
+  const { data: recentNotes } = await supabase
     .from("notes")
     .select(
       `
@@ -66,7 +66,8 @@ export default async function AdminDashboard() {
       subject,
       created_at,
       is_approved,
-      profiles!inner (
+      user_id,
+      profiles (
         full_name,
         email
       )
@@ -74,14 +75,6 @@ export default async function AdminDashboard() {
     )
     .order("created_at", { ascending: false })
     .limit(5);
-
-  // Transform profiles from array to single object
-  const recentNotes = (recentNotesRaw || []).map((note: any) => ({
-    ...note,
-    profiles: Array.isArray(note.profiles) && note.profiles.length > 0
-      ? note.profiles[0]
-      : null,
-  }));
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -125,8 +118,8 @@ export default async function AdminDashboard() {
       <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl overflow-hidden">
         {/* Table Header */}
         <div className="px-6 py-4 border-b border-white/10">
-          <h2 className="text-xl font-bold text-white">Recent Uploads</h2>
-          <p className="text-sm text-slate-400 mt-1">Last 5 notes submitted to the platform</p>
+          <h2 className="text-xl font-bold text-white">Recent Activity</h2>
+          <p className="text-sm text-slate-400 mt-1">Last 5 file actions (uploads, approvals, rejections)</p>
         </div>
 
         {/* Table Content */}
@@ -145,10 +138,10 @@ export default async function AdminDashboard() {
                     Uploaded By
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    Date
+                    Action
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                    Status
+                    Date
                   </th>
                 </tr>
               </thead>
@@ -164,23 +157,24 @@ export default async function AdminDashboard() {
                     <td className="px-6 py-4 text-sm text-slate-300">
                       {note.profiles?.full_name || note.profiles?.email || "Unknown"}
                     </td>
+                    <td className="px-6 py-4 text-sm">
+                      {note.is_approved ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-300">
+                          ✓ Approved
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-500/20 text-orange-300">
+                          ⏳ Pending
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-sm text-slate-400">
                       {new Date(note.created_at).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
-                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
                       })}
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      {note.is_approved ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-300">
-                          Approved
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-500/20 text-orange-300">
-                          Pending
-                        </span>
-                      )}
                     </td>
                   </tr>
                 ))}
