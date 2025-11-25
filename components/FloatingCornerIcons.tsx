@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   BookOpen,
@@ -61,9 +62,19 @@ function generateIcons(count: number, isLeftCluster: boolean): FloatingIcon[] {
 }
 
 export default function FloatingCornerIcons() {
-  const leftIcons = generateIcons(15, true);
-  const rightIcons = generateIcons(15, false);
-  const allIcons = [...leftIcons, ...rightIcons];
+  const [allIcons, setAllIcons] = useState<FloatingIcon[]>([]);
+
+  // Generate icons only on client-side to prevent hydration mismatch
+  useEffect(() => {
+    const leftIcons = generateIcons(15, true);
+    const rightIcons = generateIcons(15, false);
+    setAllIcons([...leftIcons, ...rightIcons]);
+  }, []);
+
+  // Don't render anything until icons are generated client-side
+  if (allIcons.length === 0) {
+    return null;
+  }
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
