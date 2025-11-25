@@ -19,15 +19,18 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  X
+  X,
+  MessageSquare,
+  ShieldAlert
 } from "lucide-react";
 
 interface AdminLayoutWrapperProps {
   children: React.ReactNode;
   pendingCount: number;
+  bannedCount: number;
 }
 
-export default function AdminLayoutWrapper({ children, pendingCount }: AdminLayoutWrapperProps) {
+export default function AdminLayoutWrapper({ children, pendingCount, bannedCount }: AdminLayoutWrapperProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -54,6 +57,17 @@ export default function AdminLayoutWrapper({ children, pendingCount }: AdminLayo
       href: "/admin/users",
       label: "Users & Bans",
       icon: Users,
+    },
+    {
+      href: "/admin/banned",
+      label: "Banned Users",
+      icon: ShieldAlert,
+      badge: bannedCount > 0 ? bannedCount : null,
+    },
+    {
+      href: "/admin/feedback",
+      label: "Feedback",
+      icon: MessageSquare,
     },
     {
       href: "/admin/analytics",
