@@ -108,6 +108,15 @@ export default function FeedbackPage() {
 
     // Auth Guard: Check if user is logged in
     if (!user) {
+      // Double-check auth status to avoid race condition
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        // User is actually logged in, update state and continue
+        setUser(currentUser);
+        await submitFeedbackHandler();
+        return;
+      }
+      
       // Save draft to sessionStorage
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
       // Show login modal instead of redirecting
@@ -144,7 +153,7 @@ export default function FeedbackPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] px-4 md:px-6 py-12 flex items-center justify-center">
+    <div className="min-h-[calc(100vh-4rem)] px-4 md:px-6 py-12 pt-32 flex items-center justify-center">
       {/* Login Prompt Modal Overlay */}
       <AnimatePresence>
         {showLoginPrompt && (

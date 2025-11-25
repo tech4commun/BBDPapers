@@ -4,38 +4,60 @@
  */
 
 import Image from "next/image";
-import { ShieldCheck, ShieldAlert, Ban, CheckCircle } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Ban, CheckCircle, AlertTriangle } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
 
 // Toggle Ban Server Action
 async function toggleBan(userId: string, currentBanStatus: boolean) {
   "use server";
   
-  const supabase = await createClient();
+  console.log('🚨 [BAN ACTION] Triggered:', { userId, currentBanStatus });
   
-  // Verify admin
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  
-  if (!user) return;
-  
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-  
-  if (!profile?.is_admin) return;
-  
-  // Toggle ban status
-  await supabase
-    .from("profiles")
-    .update({ is_banned: !currentBanStatus })
-    .eq("id", userId);
-  
-  revalidatePath("/admin/users");
+  try {
+    const supabase = await createClient();
+    
+    // Verify admin
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log('❌ [BAN ACTION] No user found');
+      throw new Error('Unauthorized');
+    }
+    
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .single();
+    
+    if (!profile?.is_admin) {
+      console.log('❌ [BAN ACTION] User is not admin');
+      throw new Error('Unauthorized - Admin only');
+    }
+    
+    // Toggle ban status
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_banned: !currentBanStatus })
+      .eq("id", userId);
+    
+    if (error) {
+      console.error('❌ [BAN ACTION] Database error:', error);
+      throw error;
+    }
+    
+    console.log('✅ [BAN ACTION] Success:', { userId, newStatus: !currentBanStatus });
+    
+    revalidatePath("/admin/users");
+    return { success: true };
+  } catch (error) {
+    console.error('💥 [BAN ACTION] Failed:', error);
+    throw error;
+  }
 }
 
 export default async function UsersPage() {
@@ -46,6 +68,9 @@ export default async function UsersPage() {
     .from("profiles")
     .select("*")
     .order("created_at", { ascending: false });
+
+  // Count banned users
+  const bannedUsersCount = profiles?.filter(p => p.is_banned).length || 0;
   
   if (error) {
     return (
@@ -66,6 +91,25 @@ export default async function UsersPage() {
           Manage user accounts and moderation ({profiles?.length || 0} total users)
         </p>
       </div>
+
+      {/* Banned Users Alert Banner */}
+      {bannedUsersCount > 0 && (
+        <Link href="/admin/banned" className="block">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 hover:bg-red-500/15 transition-colors cursor-pointer">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-red-300 font-medium">
+                  {bannedUsersCount} {bannedUsersCount === 1 ? 'user is' : 'users are'} currently banned
+                </p>
+                <p className="text-red-400/70 text-sm">
+                  Click here to view and manage banned users →
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* Users Table */}
       <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl overflow-hidden">
@@ -106,17 +150,18 @@ export default async function UsersPage() {
                             alt={profile.full_name || "User"}
                             width={40}
                             height={40}
-                            className="rounded-full"
+                            className="rounded-full object-cover"
+                            unoptimized
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
                             <span className="text-white font-bold text-sm">
-                              {profile.full_name?.[0]?.toUpperCase() || "U"}
+                              {profile.full_name?.[0]?.toUpperCase() || profile.email?.[0]?.toUpperCase() || "U"}
                             </span>
                           </div>
                         )}
                         <span className="text-white font-medium">
-                          {profile.full_name || "Unknown User"}
+                          {profile.full_name || profile.email?.split("@")[0] || "Unknown User"}
                         </span>
                       </div>
                     </td>
