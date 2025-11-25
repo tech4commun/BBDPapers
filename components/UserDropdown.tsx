@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { signOut } from "@/app/login/actions";
+import { createClient } from "@/utils/supabase/client";
 
 interface UserDropdownProps {
   user: SupabaseUser;
@@ -15,6 +16,7 @@ interface UserDropdownProps {
 export default function UserDropdown({ user, avatarUrl }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -85,15 +87,19 @@ export default function UserDropdown({ user, avatarUrl }: UserDropdownProps) {
           </Link>
 
           {/* Logout Button */}
-          <form action={signOut} className="w-full">
-            <button
-              type="submit"
-              className="w-full flex items-center gap-2 px-3 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-all text-sm font-medium text-left"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Logout</span>
-            </button>
-          </form>
+          <button
+            onClick={async () => {
+              setIsOpen(false);
+              // Sign out on client first to trigger auth state change immediately
+              await supabase.auth.signOut();
+              // Then call server action to clear server-side session
+              await signOut();
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-all text-sm font-medium text-left"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Logout</span>
+          </button>
         </div>
       )}
     </div>
