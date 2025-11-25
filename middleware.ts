@@ -36,7 +36,23 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 2. GUEST ONLY GUARD (The Fix for "Schrödinger's User")
+  // 2. BAN CHECK - Block banned users from accessing the site
+  if (user && !request.nextUrl.pathname.startsWith("/banned")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_banned")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.is_banned) {
+      // Sign out the banned user
+      await supabase.auth.signOut();
+      // Redirect to banned page
+      return NextResponse.redirect(new URL("/banned", request.url));
+    }
+  }
+
+  // 3. GUEST ONLY GUARD (The Fix for "Schrödinger's User")
   // If user is logged in AND tries to go to /login, kick them to explore or their intended destination
   if (user && request.nextUrl.pathname.startsWith("/login")) {
     const next = request.nextUrl.searchParams.get("next");
@@ -44,9 +60,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
-  // 3. REMOVED: /upload is now public - authentication checked in UploadModal when user clicks upload button
+  // 4. REMOVED: /upload is now public - authentication checked in UploadModal when user clicks upload button
 
-  // 4. ADMIN GUARD
+  // 5. ADMIN GUARD
   if (request.nextUrl.pathname.startsWith("/admin")) {
     // If no user, kick to login
     if (!user) {
