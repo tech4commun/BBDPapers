@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   BookOpen,
@@ -61,9 +62,21 @@ function generateIcons(count: number, isLeftCluster: boolean): FloatingIcon[] {
 }
 
 export default function FloatingCornerIcons() {
-  const leftIcons = generateIcons(15, true);
-  const rightIcons = generateIcons(15, false);
-  const allIcons = [...leftIcons, ...rightIcons];
+  const [allIcons, setAllIcons] = useState<FloatingIcon[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    // Generate icons only on client side after mount
+    const leftIcons = generateIcons(15, true);
+    const rightIcons = generateIcons(15, false);
+    setAllIcons([...leftIcons, ...rightIcons]);
+    setIsMounted(true);
+  }, []);
+
+  // Prevent rendering until mounted to avoid hydration mismatch
+  if (!isMounted) {
+    return <div className="absolute inset-0 overflow-hidden pointer-events-none" />;
+  }
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
