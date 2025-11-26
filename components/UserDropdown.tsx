@@ -33,8 +33,7 @@ export default function UserDropdown({ user, avatarUrl }: UserDropdownProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Use avatarUrl from profiles table, fallback to user_metadata
-  const displayAvatar = avatarUrl || user.user_metadata?.avatar_url;
+  // Always use preset avatar from profiles, never external sources
   const displayName =
     user.user_metadata?.full_name ||
     user.user_metadata?.name ||
@@ -49,9 +48,9 @@ export default function UserDropdown({ user, avatarUrl }: UserDropdownProps) {
         className="w-10 h-10 rounded-full border border-white/10 overflow-hidden hover:border-white/30 transition-all hover:scale-105 active:scale-95 bg-slate-800"
         aria-label="User menu"
       >
-        {displayAvatar ? (
+        {avatarUrl ? (
           <Image
-            src={displayAvatar}
+            src={avatarUrl}
             alt={displayName}
             width={40}
             height={40}

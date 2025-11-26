@@ -13,7 +13,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
-import { isEmailBanned } from "@/app/actions/banned-emails";
+import { getRandomAvatar } from "@/utils/avatars";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -29,15 +29,22 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error && data.user) {
-      // Check if email is banned
-      const emailBanned = await isEmailBanned(data.user.email!);
-      
-      if (emailBanned) {
-        console.log("🚫 Banned email attempted login:", data.user.email);
-        // Sign out immediately
-        await supabase.auth.signOut();
-        // Redirect to banned page
-        return NextResponse.redirect(new URL("/banned", requestUrl.origin));
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", data.user.id)
+        .single();
+
+      // If new user or no avatar, assign random preset avatar
+      if (!existingProfile?.avatar_url) {
+        const randomAvatar = getRandomAvatar();
+        await supabase
+          .from("profiles")
+          .update({ avatar_url: randomAvatar })
+          .eq("id", data.user.id);
+        
+        console.log("✅ Assigned random avatar to new user:", randomAvatar);
       }
 
       // Success: Redirect to the intended destination

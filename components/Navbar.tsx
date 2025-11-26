@@ -33,16 +33,16 @@ export default function Navbar() {
     supabase.auth.getUser().then(async ({ data }) => {
       setUser(data.user);
       
-      // Query profiles table for admin status and avatar
+      // Query profiles table for admin status only (not avatar_url)
       if (data.user) {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("is_admin, avatar_url")
+          .select("is_admin")
           .eq("id", data.user.id)
           .single();
         
         setIsAdmin(profile?.is_admin ?? false);
-        setAvatarUrl(profile?.avatar_url ?? null);
+        setAvatarUrl(null); // Always use default avatar
       } else {
         setIsAdmin(false);
         setAvatarUrl(null);
@@ -55,16 +55,16 @@ export default function Navbar() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
       
-      // Query admin status and avatar on auth change
+      // Query admin status on auth change (not avatar_url)
       if (session?.user) {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("is_admin, avatar_url")
+          .select("is_admin")
           .eq("id", session.user.id)
           .single();
         
         setIsAdmin(profile?.is_admin ?? false);
-        setAvatarUrl(profile?.avatar_url ?? null);
+        setAvatarUrl(null); // Always use default avatar
       } else {
         setIsAdmin(false);
         setAvatarUrl(null);

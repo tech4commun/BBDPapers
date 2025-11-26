@@ -39,6 +39,9 @@ export default function SettingsForm({ user, profile }: SettingsFormProps) {
     setSuccess(false);
 
     try {
+      // Optimistic UI update
+      const previousAvatar = avatar;
+      
       const result = await updateProfileSettings({
         avatar_url: avatar,
         course,
@@ -49,13 +52,18 @@ export default function SettingsForm({ user, profile }: SettingsFormProps) {
 
       if (!result.success) {
         setError(result.error || "Failed to save settings");
+        // Revert optimistic update
+        setAvatar(previousAvatar);
         return;
       }
 
       setSuccess(true);
 
-      // CRUCIAL: Refresh client cache to update Navbar avatar
+      // CRITICAL: Force immediate refresh
       router.refresh();
+      
+      // Also reload the page to ensure Navbar updates
+      window.location.reload();
 
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
