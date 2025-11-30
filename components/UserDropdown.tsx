@@ -14,6 +14,7 @@ interface UserDropdownProps {
 
 export default function UserDropdown({ user, avatarUrl }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -39,6 +40,11 @@ export default function UserDropdown({ user, avatarUrl }: UserDropdownProps) {
     user.email?.split("@")[0] ||
     "User";
 
+  // Reset image error when avatar changes
+  useEffect(() => {
+    setImageError(false);
+  }, [avatarUrl]);
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Avatar Button */}
@@ -47,14 +53,16 @@ export default function UserDropdown({ user, avatarUrl }: UserDropdownProps) {
         className="w-10 h-10 rounded-full border border-white/10 overflow-hidden hover:border-white/30 transition-all hover:scale-105 active:scale-95 bg-slate-800"
         aria-label="User menu"
       >
-        {displayAvatar ? (
+        {displayAvatar && !imageError ? (
           <Image
+            key={displayAvatar}
             src={displayAvatar}
             alt={displayName}
             width={40}
             height={40}
             className="w-full h-full object-cover"
             unoptimized
+            onError={() => setImageError(true)}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">

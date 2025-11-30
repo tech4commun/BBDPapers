@@ -29,6 +29,8 @@ export default function Navbar() {
 
   // Auth State Detection
   useEffect(() => {
+    let profileChannel: ReturnType<typeof supabase.channel> | null = null;
+
     // Check active session immediately
     supabase.auth.getUser().then(async ({ data }) => {
       setUser(data.user);
@@ -43,6 +45,25 @@ export default function Navbar() {
         
         setIsAdmin(profile?.is_admin ?? false);
         setAvatarUrl(profile?.avatar_url ?? null);
+
+        // Subscribe to realtime profile updates
+        profileChannel = supabase
+          .channel(`profile-${data.user.id}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "profiles",
+              filter: `id=eq.${data.user.id}`,
+            },
+            (payload) => {
+              // Update avatar and admin status instantly
+              setAvatarUrl(payload.new.avatar_url ?? null);
+              setIsAdmin(payload.new.is_admin ?? false);
+            }
+          )
+          .subscribe();
       } else {
         setIsAdmin(false);
         setAvatarUrl(null);
@@ -55,6 +76,12 @@ export default function Navbar() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
       
+      // Cleanup old profile subscription
+      if (profileChannel) {
+        await supabase.removeChannel(profileChannel);
+        profileChannel = null;
+      }
+
       // Query admin status and avatar on auth change
       if (session?.user) {
         const { data: profile } = await supabase
@@ -65,14 +92,38 @@ export default function Navbar() {
         
         setIsAdmin(profile?.is_admin ?? false);
         setAvatarUrl(profile?.avatar_url ?? null);
+
+        // Subscribe to realtime profile updates
+        profileChannel = supabase
+          .channel(`profile-${session.user.id}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "profiles",
+              filter: `id=eq.${session.user.id}`,
+            },
+            (payload) => {
+              // Update avatar and admin status instantly
+              setAvatarUrl(payload.new.avatar_url ?? null);
+              setIsAdmin(payload.new.is_admin ?? false);
+            }
+          )
+          .subscribe();
       } else {
         setIsAdmin(false);
         setAvatarUrl(null);
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+    return () => {
+      subscription.unsubscribe();
+      if (profileChannel) {
+        supabase.removeChannel(profileChannel);
+      }
+    };
+  }, [supabase]);
 
   // Scroll lock when drawer is open
   useEffect(() => {
