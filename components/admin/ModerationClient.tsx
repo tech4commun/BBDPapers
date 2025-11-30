@@ -45,8 +45,10 @@ export default function ModerationClient({ notes }: { notes: any[] }) {
               
               {/* Metadata Chips */}
               <div className="flex flex-wrap gap-2 text-xs text-slate-400">
+                {note.course && <span className="bg-white/5 px-2 py-1 rounded">🎓 {note.course}</span>}
                 {note.subject && <span className="bg-white/5 px-2 py-1 rounded">📚 {note.subject}</span>}
                 {note.branch && <span className="bg-white/5 px-2 py-1 rounded">🏛️ {note.branch}</span>}
+                {note.semester && <span className="bg-white/5 px-2 py-1 rounded">📅 {note.semester}</span>}
               </div>
 
               {/* Uploader Info */}

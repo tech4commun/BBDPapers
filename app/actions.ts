@@ -9,26 +9,57 @@ export interface SearchSuggestion {
   type: "notes" | "pyq";
   subject: string;
   file_path: string;
+  uploader_name: string | null;
+  course: string;
+  branch: string;
+  semester: string;
 }
 
-// Cached search function for better performance
-const getCachedSearchResults = unstable_cache(
+// Cached database query for better performance
+const getCachedSearchData = unstable_cache(
   async (sanitizedQuery: string) => {
     const supabase = await createClient();
 
-    // Search approved notes only by title, subject, or branch
+    console.log('🔍 Backend: Searching for:', sanitizedQuery);
+
+    // Search approved notes only by subject (not title or branch)
     const { data, error } = await supabase
       .from('notes')
-      .select('id, title, type, subject, file_path')
+      .select(`
+        id,
+        title,
+        type,
+        subject,
+        file_path,
+        course,
+        branch,
+        semester,
+        profiles (
+          full_name,
+          email
+        )
+      `)
       .eq('is_approved', true)
       .neq('subject', 'Pending Review')
-      .or(`title.ilike.%${sanitizedQuery}%,subject.ilike.%${sanitizedQuery}%,branch.ilike.%${sanitizedQuery}%`)
+      .ilike('subject', `%${sanitizedQuery}%`) // Only search subject field
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(20);
 
     if (error) {
-      console.error('❌ Search error:', error);
+      console.error('❌ Backend search error:', error);
       throw error;
+    }
+
+    console.log('📦 Backend: Raw results from DB:', data?.length || 0);
+    
+    if (data && data.length > 0) {
+      console.log('📋 Backend: First result details:', {
+        subject: data[0].subject,
+        course: data[0].course,
+        branch: data[0].branch,
+        semester: data[0].semester,
+        type: data[0].type
+      });
     }
 
     return data || [];
@@ -43,6 +74,7 @@ const getCachedSearchResults = unstable_cache(
 export async function getSearchSuggestions(query: string): Promise<SearchSuggestion[]> {
   // Validation: minimum 2 characters
   if (!query || query.trim().length < 2) {
+    console.log('⏸️ Backend: Query too short:', query);
     return [];
   }
 
@@ -50,7 +82,55 @@ export async function getSearchSuggestions(query: string): Promise<SearchSuggest
   const sanitizedQuery = query.trim().slice(0, 100);
 
   try {
-    return await getCachedSearchResults(sanitizedQuery);
+    const data = await getCachedSearchData(sanitizedQuery);
+
+    if (!data || data.length === 0) {
+      console.log('⚠️ Backend: No results found for:', sanitizedQuery);
+      return [];
+    }
+
+    // Group by subject, type, course, branch, semester to show unique combinations
+    const resultMap = new Map<string, any>();
+
+    data.forEach(item => {
+      const subject = item.subject;
+      const type = item.type;
+      const course = item.course || 'N/A';
+      const branch = item.branch || 'N/A';
+      const semester = item.semester || 'N/A';
+      const key = `${subject}_${type}_${course}_${branch}_${semester}`;
+
+      // Store first occurrence of each unique combination
+      if (!resultMap.has(key)) {
+        resultMap.set(key, item);
+      }
+    });
+
+    console.log('🗂️ Backend: After grouping:', resultMap.size, 'unique combinations');
+
+    // Transform data to extract uploader name
+    const suggestions = Array.from(resultMap.values()).map((item: any) => ({
+      id: item.id,
+      title: item.title,
+      type: item.type,
+      subject: item.subject,
+      file_path: item.file_path,
+      uploader_name: item.profiles?.full_name || item.profiles?.email?.split('@')[0] || null,
+      course: item.course || 'N/A',
+      branch: item.branch || 'N/A',
+      semester: item.semester || 'N/A'
+    }));
+
+    // Sort: PYQ first, then Notes, then alphabetically by subject
+    suggestions.sort((a, b) => {
+      if (a.type !== b.type) {
+        return a.type === 'pyq' ? -1 : 1;
+      }
+      return a.subject.localeCompare(b.subject);
+    });
+
+    console.log('✅ Backend: Returning', suggestions.length, 'suggestions');
+    return suggestions.slice(0, 10);
   } catch (error) {
     console.error("❌ Search failed:", error);
     return [];

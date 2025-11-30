@@ -40,10 +40,11 @@ export async function getStats(): Promise<
       { count: totalUsers },
       { count: recentVisits }
     ] = await Promise.all([
-      // Total notes count
+      // Total approved notes count only
       supabase
         .from('notes')
-        .select('*', { count: 'exact', head: true }),
+        .select('*', { count: 'exact', head: true })
+        .eq('is_approved', true),
       
       // Pending approvals count
       supabase
@@ -147,23 +148,46 @@ export async function getPendingContent() {
 // 3. Approve Content (with Rename)
 export async function approveNote(
   noteId: string, 
-  updates: { title: string; subject: string; branch: string; semester: string }
+  updates: { 
+    title: string; 
+    subject: string; 
+    course: string; 
+    branch: string; 
+    semester: string;
+    exam_type?: string;
+    academic_year?: string;
+    semester_type?: string;
+  }
 ) {
   const isAdmin = await checkAdmin(); // Helper we wrote earlier
   if (!isAdmin) return { error: "Unauthorized" };
 
   const supabase = await createClient();
 
+  const updateData: any = {
+    title: updates.title,
+    subject: updates.subject,
+    course: updates.course,
+    branch: updates.branch,
+    semester: updates.semester,
+    is_approved: true, // <--- The magic switch
+    updated_at: new Date().toISOString()
+  };
+
+  // Add PYQ fields if provided (convert empty strings to null)
+  if (updates.exam_type !== undefined) {
+    updateData.exam_type = updates.exam_type && updates.exam_type.trim() !== '' ? updates.exam_type.toLowerCase() : null;
+  }
+  if (updates.academic_year !== undefined) {
+    updateData.academic_year = updates.academic_year && updates.academic_year.trim() !== '' ? updates.academic_year : null;
+  }
+  if (updates.semester_type !== undefined) {
+    updateData.semester_type = updates.semester_type && updates.semester_type.trim() !== '' ? updates.semester_type.toLowerCase() : null;
+  }
+
   const { error } = await supabase
     .from('notes')
-    .update({
-      title: updates.title,
-      subject: updates.subject,
-      branch: updates.branch,
-      semester: updates.semester,
-      is_approved: true, // <--- The magic switch
-      updated_at: new Date().toISOString()
-    })
+    .update(updateData)
     .eq('id', noteId);
 
   if (error) return { error: error.message };
@@ -356,8 +380,13 @@ export async function listAllFiles() {
         noteId: note?.id || null,
         title: note?.title || file.name,
         subject: note?.subject || 'Unknown',
+        course: note?.course || null,
         branch: note?.branch || null,
         semester: note?.semester || null,
+        type: note?.type || 'notes',
+        exam_type: note?.exam_type || null,
+        academic_year: note?.academic_year || null,
+        semester_type: note?.semester_type || null,
         is_approved: note?.is_approved || false
       };
     });
@@ -466,8 +495,12 @@ export async function updateNoteMetadata(
   updates: {
     title: string;
     subject: string;
+    course: string;
     branch: string;
     semester: string;
+    exam_type?: string;
+    academic_year?: string;
+    semester_type?: string;
   }
 ) {
   const isAdmin = await checkAdmin();
@@ -483,8 +516,12 @@ export async function updateNoteMetadata(
       .update({
         title: updates.title,
         subject: updates.subject,
+        course: updates.course,
         branch: updates.branch,
         semester: updates.semester,
+        ...(updates.exam_type !== undefined && { exam_type: updates.exam_type }),
+        ...(updates.academic_year !== undefined && { academic_year: updates.academic_year }),
+        ...(updates.semester_type !== undefined && { semester_type: updates.semester_type }),
         updated_at: new Date().toISOString()
       })
       .eq('id', noteId);

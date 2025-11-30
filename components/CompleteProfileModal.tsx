@@ -92,16 +92,20 @@ export default function CompleteProfileModal({
             className="relative max-w-lg w-full bg-slate-900/90 border border-white/10 rounded-2xl backdrop-blur-xl shadow-2xl overflow-hidden"
           >
             {/* Header */}
-            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-6 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-2xl mb-4">
-                <GraduationCap className="w-8 h-8 text-white" />
+            <div className="p-6 border-b border-white/10 bg-slate-900/50">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+                  <GraduationCap className="w-6 h-6 text-indigo-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">
+                    Complete Your Profile
+                  </h2>
+                  <p className="text-slate-400 text-sm">
+                    Help us personalize your experience
+                  </p>
+                </div>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">
-                Complete Your Profile
-              </h2>
-              <p className="text-white/80 text-sm">
-                Help us personalize your experience with your academic details
-              </p>
             </div>
 
             {/* Form */}
@@ -114,14 +118,20 @@ export default function CompleteProfileModal({
 
               {/* Course */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
-                  <BookOpen className="w-4 h-4" />
-                  Course
+                <label className="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">
+                  Course *
                 </label>
                 <select
                   value={course}
                   onChange={(e) => setCourse(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  className="w-full bg-slate-950 border border-white/10 rounded-lg p-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer appearance-none transition-all"
+                  style={{
+                    backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")',
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.5em 1.5em',
+                    paddingRight: '2.5rem'
+                  }}
                   required
                 >
                   <option value="">Select your course</option>
@@ -133,14 +143,20 @@ export default function CompleteProfileModal({
 
               {/* Branch (Dynamic) */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
-                  <Award className="w-4 h-4" />
-                  Branch/Specialization
+                <label className="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">
+                  Branch *
                 </label>
                 <select
                   value={branch}
                   onChange={(e) => setBranch(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-slate-950 border border-white/10 rounded-lg p-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer appearance-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")',
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.5em 1.5em',
+                    paddingRight: '2.5rem'
+                  }}
                   required
                   disabled={!course}
                 >
@@ -157,14 +173,20 @@ export default function CompleteProfileModal({
 
               {/* Semester */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
-                  <Calendar className="w-4 h-4" />
-                  Current Semester
+                <label className="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">
+                  Current Semester *
                 </label>
                 <select
                   value={semester}
                   onChange={(e) => setSemester(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  className="w-full bg-slate-950 border border-white/10 rounded-lg p-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer appearance-none transition-all"
+                  style={{
+                    backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")',
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.5em 1.5em',
+                    paddingRight: '2.5rem'
+                  }}
                   required
                 >
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
@@ -177,9 +199,8 @@ export default function CompleteProfileModal({
 
               {/* Passout Year */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
-                  <GraduationCap className="w-4 h-4" />
-                  Expected Passout Year
+                <label className="block text-xs font-medium text-slate-400 mb-2 uppercase tracking-wider">
+                  Expected Graduation Year *
                 </label>
                 <input
                   type="number"
@@ -187,7 +208,7 @@ export default function CompleteProfileModal({
                   onChange={(e) => setPassoutYear(Number(e.target.value))}
                   min={new Date().getFullYear()}
                   max={new Date().getFullYear() + 10}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  className="w-full bg-slate-950 border border-white/10 rounded-lg p-3 text-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all placeholder:text-slate-600"
                   placeholder="e.g., 2026"
                   required
                 />
@@ -197,13 +218,13 @@ export default function CompleteProfileModal({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full px-6 py-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6 shadow-lg hover:shadow-xl"
+                className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-2 shadow-lg shadow-indigo-900/20"
               >
                 {isSubmitting ? "Saving..." : "Complete Profile"}
               </button>
 
-              <p className="text-xs text-slate-400 text-center mt-4">
-                You can update these details later from your profile settings
+              <p className="text-xs text-slate-500 text-center mt-3">
+                You can update these details later in settings
               </p>
             </form>
           </motion.div>

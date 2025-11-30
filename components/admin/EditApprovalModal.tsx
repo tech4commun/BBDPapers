@@ -22,8 +22,13 @@ export default function EditApprovalModal({ note, onClose, isOpen }: EditModalPr
   const [formData, setFormData] = useState({
     title: note.title,
     subject: note.subject || '',
+    course: note.course || 'B.Tech',
     branch: note.branch || 'CSE', // Default suggestion
     semester: note.semester || 'Semester 1',
+    // PYQ-specific fields
+    exam_type: note.exam_type || '',
+    academic_year: note.academic_year || '',
+    semester_type: note.semester_type || '',
   });
 
   const handleApprove = async () => {
@@ -142,33 +147,113 @@ export default function EditApprovalModal({ note, onClose, isOpen }: EditModalPr
                   />
                 </div>
                 <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1 uppercase">Course</label>
+                  <select 
+                    value={formData.course}
+                    onChange={(e) => setFormData({...formData, course: e.target.value})}
+                    className="w-full bg-slate-950 border border-white/10 rounded-lg p-3 text-white focus:border-indigo-500 outline-none cursor-pointer appearance-none"
+                    style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}
+                  >
+                    <option value="B.Tech">B.Tech</option>
+                    <option value="BCA">BCA</option>
+                    <option value="MCA">MCA</option>
+                    <option value="M.Tech">M.Tech</option>
+                    <option value="MBA">MBA</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block text-xs font-medium text-slate-400 mb-1 uppercase">Branch</label>
                   <select 
                     value={formData.branch}
                     onChange={(e) => setFormData({...formData, branch: e.target.value})}
-                    className="w-full bg-slate-950 border border-white/10 rounded-lg p-3 text-white focus:border-indigo-500 outline-none appearance-none"
+                    className="w-full bg-slate-950 border border-white/10 rounded-lg p-3 text-white focus:border-indigo-500 outline-none cursor-pointer appearance-none"
+                    style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}
                   >
                     <option value="CSE">Computer Science (CSE)</option>
                     <option value="IT">Information Tech (IT)</option>
                     <option value="ME">Mechanical (ME)</option>
                     <option value="CE">Civil (CE)</option>
+                    <option value="EE">Electrical (EE)</option>
+                    <option value="ECE">Electronics (ECE)</option>
                     <option value="BCA">BCA</option>
+                    <option value="MCA">MCA</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1 uppercase">Semester</label>
+                  <select 
+                    value={formData.semester}
+                    onChange={(e) => setFormData({...formData, semester: e.target.value})}
+                    className="w-full bg-slate-950 border border-white/10 rounded-lg p-3 text-white focus:border-indigo-500 outline-none cursor-pointer appearance-none"
+                    style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}
+                  >
+                    {[1,2,3,4,5,6,7,8].map(sem => (
+                      <option key={sem} value={`Semester ${sem}`}>Semester {sem}</option>
+                    ))}
                   </select>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1 uppercase">Semester</label>
-                <select 
-                  value={formData.semester}
-                  onChange={(e) => setFormData({...formData, semester: e.target.value})}
-                  className="w-full bg-slate-950 border border-white/10 rounded-lg p-3 text-white focus:border-indigo-500 outline-none appearance-none"
-                >
-                  {[1,2,3,4,5,6,7,8].map(sem => (
-                    <option key={sem} value={`Semester ${sem}`}>Semester {sem}</option>
-                  ))}
-                </select>
-              </div>
+              {/* PYQ-Specific Fields - Only show for PYQ type */}
+              {note.type === 'pyq' && (
+                <>
+                  <div className="border-t border-white/10 pt-4 mt-4">
+                    <p className="text-sm font-semibold text-purple-400 mb-3">📝 PYQ-Specific Details</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1 uppercase">Exam Type</label>
+                      <select 
+                        value={formData.exam_type}
+                        onChange={(e) => setFormData({...formData, exam_type: e.target.value})}
+                        className="w-full bg-slate-950 border border-white/10 rounded-lg p-3 text-white focus:border-indigo-500 outline-none cursor-pointer appearance-none"
+                        style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}
+                      >
+                        <option value="">Select Exam Type</option>
+                        <option value="sessional">Sessional</option>
+                        <option value="semester">Semester</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1 uppercase">Academic Year</label>
+                      <select 
+                        value={formData.academic_year}
+                        onChange={(e) => setFormData({...formData, academic_year: e.target.value})}
+                        className="w-full bg-slate-950 border border-white/10 rounded-lg p-3 text-white focus:border-indigo-500 outline-none cursor-pointer appearance-none"
+                        style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}
+                      >
+                        <option value="">Select Academic Year</option>
+                        {Array.from({ length: 10 }, (_, i) => {
+                          const year = new Date().getFullYear() - i;
+                          return (
+                            <option key={year} value={`${year}-${year + 1}`}>
+                              {year}-{year + 1}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1 uppercase">Semester Type</label>
+                    <select 
+                      value={formData.semester_type}
+                      onChange={(e) => setFormData({...formData, semester_type: e.target.value})}
+                      className="w-full bg-slate-950 border border-white/10 rounded-lg p-3 text-white focus:border-indigo-500 outline-none cursor-pointer appearance-none"
+                      style={{ backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")', backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2.5rem' }}
+                    >
+                      <option value="">Select Semester Type</option>
+                      <option value="odd">Odd Semester</option>
+                      <option value="even">Even Semester</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

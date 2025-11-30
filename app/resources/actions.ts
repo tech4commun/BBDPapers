@@ -17,7 +17,13 @@ export async function searchResources(params: SearchParams) {
 
     let query = supabase
       .from('notes')
-      .select('*')
+      .select(`
+        *,
+        profiles (
+          full_name,
+          email
+        )
+      `)
       .eq('is_approved', true)
       .eq('type', params.type);
 
@@ -40,8 +46,14 @@ export async function searchResources(params: SearchParams) {
       return { error: error.message, results: [] };
     }
 
-    console.log("✅ Found resources:", data?.length || 0);
-    return { error: null, results: data || [] };
+    // Transform data to include uploader_name and all fields including PYQ fields
+    const results = data?.map(item => ({
+      ...item,
+      uploader_name: item.profiles?.full_name || item.profiles?.email?.split('@')[0] || null
+    })) || [];
+
+    console.log("✅ Found resources:", results.length);
+    return { error: null, results };
   } catch (error: any) {
     console.error("💥 Search exception:", error);
     return { error: error.message, results: [] };

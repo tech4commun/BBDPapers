@@ -21,7 +21,7 @@ export default async function AnalyticsPage() {
       )
     `
     )
-    .order("visited_at", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(50);
   
   if (error) {
@@ -123,7 +123,7 @@ export default async function AnalyticsPage() {
                     <td className="px-6 py-4 text-sm text-slate-300">
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-slate-500" />
-                        {new Date(log.visited_at).toLocaleString("en-US", {
+                        {new Date(log.created_at).toLocaleString("en-US", {
                           month: "short",
                           day: "numeric",
                           hour: "2-digit",

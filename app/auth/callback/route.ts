@@ -13,28 +13,47 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
+import { getRandomAvatar } from "@/utils/avatars";
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const next = requestUrl.searchParams.get("next") ?? "/explore";
 
-  console.log("🔵 Auth Callback - next param:", next); // Debug log
+  console.log("🔵 Auth Callback - next param:", next);
 
   if (code) {
     const supabase = await createClient();
 
     // Exchange the OAuth code for a user session
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
+    if (!error && data.user) {
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", data.user.id)
+        .single();
+
+      // If new user or no avatar, assign random preset avatar
+      if (!existingProfile?.avatar_url) {
+        const randomAvatar = getRandomAvatar();
+        await supabase
+          .from("profiles")
+          .update({ avatar_url: randomAvatar })
+          .eq("id", data.user.id);
+        
+        console.log("✅ Assigned random avatar to new user:", randomAvatar);
+      }
+
       // Success: Redirect to the intended destination
-      console.log("✅ Auth success - redirecting to:", next); // Debug log
+      console.log("✅ Auth success - redirecting to:", next);
       return NextResponse.redirect(new URL(next, requestUrl.origin));
     }
 
-    // Error during code exchange (invalid/expired code, network issue, etc.)
-    console.error("OAuth callback error:", error.message);
+    // Error during code exchange
+    console.error("OAuth callback error:", error?.message);
   }
 
   // No code provided OR exchange failed → Redirect to login with error

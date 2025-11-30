@@ -119,7 +119,7 @@ export async function loginWithMagicLink(email: string, nextUrl?: string) {
 /**
  * Signs out the current user and clears server-side session
  * Deletes HttpOnly cookies and revalidates cache to update UI immediately
- * Forces redirect to login page to ensure clean state
+ * User stays on current page after logout
  */
 export async function signOut() {
   const supabase = await createClient();
@@ -137,7 +137,9 @@ export async function signOut() {
   // 3. Clear Next.js Cache so the Navbar updates immediately
   const { revalidatePath } = await import("next/cache");
   revalidatePath("/", "layout");
+  
+  return { success: true };
 
-  // 4. Force Redirect to Login
-  redirect("/login");
+  // 4. No redirect - user stays on current page
+  // The navbar will update automatically via auth state listener
 }

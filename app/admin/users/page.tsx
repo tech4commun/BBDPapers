@@ -4,38 +4,136 @@
  */
 
 import Image from "next/image";
-import { ShieldCheck, ShieldAlert, Ban, CheckCircle } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Ban, CheckCircle, AlertTriangle, Trash2 } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
+import UserActionsClient from "./UserActionsClient";
 
 // Toggle Ban Server Action
-async function toggleBan(userId: string, currentBanStatus: boolean) {
+async function toggleBanAction(userId: string, currentBanStatus: boolean) {
   "use server";
   
-  const supabase = await createClient();
+  console.log('🚨 [BAN ACTION] Triggered:', { userId, currentBanStatus });
   
-  // Verify admin
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = await createClient();
+    
+    // Verify admin
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log('❌ [BAN ACTION] No user found');
+      throw new Error('Unauthorized');
+    }
+    
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .single();
+    
+    if (!profile?.is_admin) {
+      console.log('❌ [BAN ACTION] User is not admin');
+      throw new Error('Unauthorized - Admin only');
+    }
+    
+    // Toggle ban status
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_banned: !currentBanStatus })
+      .eq("id", userId);
+    
+    if (error) {
+      console.error('❌ [BAN ACTION] Database error:', error);
+      throw error;
+    }
+    
+    console.log('✅ [BAN ACTION] Success:', { userId, newStatus: !currentBanStatus });
+    
+    revalidatePath("/admin/users");
+    revalidatePath("/admin/banned");
+    
+    return { success: true, newStatus: !currentBanStatus };
+  } catch (error) {
+    console.error('💥 [BAN ACTION] Failed:', error);
+    throw error;
+  }
+}
+
+// Delete User Server Action
+async function deleteUserAction(userId: string) {
+  "use server";
   
-  if (!user) return;
+  console.log('🗑️ [DELETE ACTION] Triggered:', { userId });
   
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-  
-  if (!profile?.is_admin) return;
-  
-  // Toggle ban status
-  await supabase
-    .from("profiles")
-    .update({ is_banned: !currentBanStatus })
-    .eq("id", userId);
-  
-  revalidatePath("/admin/users");
+  try {
+    const supabase = await createClient();
+    
+    // Verify admin
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.log('❌ [DELETE ACTION] No user found');
+      throw new Error('Unauthorized');
+    }
+    
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .single();
+    
+    if (!profile?.is_admin) {
+      console.log('❌ [DELETE ACTION] User is not admin');
+      throw new Error('Unauthorized - Admin only');
+    }
+    
+    // Set user_id to NULL on papers (keep papers, anonymize uploader)
+    const { error: papersError } = await supabase
+      .from("papers")
+      .update({ user_id: null })
+      .eq("user_id", userId);
+    
+    if (papersError) {
+      console.error('❌ [DELETE ACTION] Error anonymizing papers:', papersError);
+      throw papersError;
+    }
+    
+    // Delete user's votes
+    const { error: votesError } = await supabase
+      .from("votes")
+      .delete()
+      .eq("user_id", userId);
+    
+    if (votesError) {
+      console.error('❌ [DELETE ACTION] Error deleting votes:', votesError);
+      throw votesError;
+    }
+    
+    // Finally delete the profile
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .delete()
+      .eq("id", userId);
+    
+    if (profileError) {
+      console.error('❌ [DELETE ACTION] Error deleting profile:', profileError);
+      throw profileError;
+    }
+    
+    console.log('✅ [DELETE ACTION] Success - User removed, papers anonymized:', { userId });
+    
+    revalidatePath("/admin/users");
+    revalidatePath("/admin/banned");
+  } catch (error) {
+    console.error('💥 [DELETE ACTION] Failed:', error);
+    throw error;
+  }
 }
 
 export default async function UsersPage() {
@@ -46,6 +144,9 @@ export default async function UsersPage() {
     .from("profiles")
     .select("*")
     .order("created_at", { ascending: false });
+
+  // Count banned users
+  const bannedUsersCount = profiles?.filter(p => p.is_banned).length || 0;
   
   if (error) {
     return (
@@ -66,6 +167,25 @@ export default async function UsersPage() {
           Manage user accounts and moderation ({profiles?.length || 0} total users)
         </p>
       </div>
+
+      {/* Banned Users Alert Banner */}
+      {bannedUsersCount > 0 && (
+        <Link href="/admin/banned" className="block">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 hover:bg-red-500/15 transition-colors cursor-pointer">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-red-300 font-medium">
+                  {bannedUsersCount} {bannedUsersCount === 1 ? 'user is' : 'users are'} currently banned
+                </p>
+                <p className="text-red-400/70 text-sm">
+                  Click here to view and manage banned users →
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* Users Table */}
       <div className="bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl overflow-hidden">
@@ -100,23 +220,24 @@ export default async function UsersPage() {
                     {/* User Avatar + Name */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        {profile.avatar_url ? (
+                        {profile.avatar_url && !profile.avatar_url.includes('gravatar') && !profile.avatar_url.includes('githubusercontent') ? (
                           <Image
                             src={profile.avatar_url}
                             alt={profile.full_name || "User"}
                             width={40}
                             height={40}
-                            className="rounded-full"
+                            className="rounded-full object-cover"
+                            unoptimized
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
                             <span className="text-white font-bold text-sm">
-                              {profile.full_name?.[0]?.toUpperCase() || "U"}
+                              {profile.full_name?.[0]?.toUpperCase() || profile.email?.[0]?.toUpperCase() || "U"}
                             </span>
                           </div>
                         )}
                         <span className="text-white font-medium">
-                          {profile.full_name || "Unknown User"}
+                          {profile.full_name || profile.email?.split("@")[0] || "Unknown User"}
                         </span>
                       </div>
                     </td>
@@ -167,18 +288,11 @@ export default async function UsersPage() {
                     {/* Actions */}
                     <td className="px-6 py-4">
                       {!profile.is_admin && (
-                        <form action={toggleBan.bind(null, profile.id, profile.is_banned)}>
-                          <button
-                            type="submit"
-                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                              profile.is_banned
-                                ? "bg-green-600 hover:bg-green-700 text-white"
-                                : "bg-red-600 hover:bg-red-700 text-white"
-                            }`}
-                          >
-                            {profile.is_banned ? "Unban" : "Ban"}
-                          </button>
-                        </form>
+                        <UserActionsClient
+                          profile={profile}
+                          onBanAction={toggleBanAction.bind(null)}
+                          onDeleteAction={deleteUserAction.bind(null)}
+                        />
                       )}
                     </td>
                   </tr>
