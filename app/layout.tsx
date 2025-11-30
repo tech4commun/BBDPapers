@@ -2,14 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import dynamic from "next/dynamic";
+import ProfileChecker from "@/components/ProfileChecker";
 import { ThemeProvider } from "@/components/ThemeProvider"; // The dark mode provider
 import { Toaster } from "sonner"; // The notification system
-
-// Lazy load ProfileChecker since it's not critical for initial render
-const ProfileChecker = dynamic(() => import("@/components/ProfileChecker"), {
-  ssr: false,
-});
 
 const inter = Inter({ 
   subsets: ["latin"],
