@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
+    reactCompiler: true, // Enable React 19 Compiler for auto-optimization
     serverActions: {
       bodySizeLimit: '10mb', // Allow up to 10MB for PDF uploads
     },

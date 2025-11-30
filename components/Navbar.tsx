@@ -152,6 +152,7 @@ export default function Navbar() {
             width={500}
             height={100}
             priority
+            sizes="(max-width: 768px) 160px, 200px"
             className="h-10 md:h-14 w-auto object-contain hover:scale-105 transition-transform duration-300"
           />
         </Link>
@@ -259,6 +260,7 @@ export default function Navbar() {
                     alt="BBD Papers Logo"
                     width={400}
                     height={80}
+                    sizes="280px"
                     className="h-16 w-auto object-contain"
                   />
                 </Link>

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from '@/utils/supabase/server';
+import { unstable_cache } from 'next/cache';
 
 export interface SearchSuggestion {
   id: string;
@@ -10,16 +11,9 @@ export interface SearchSuggestion {
   file_path: string;
 }
 
-export async function getSearchSuggestions(query: string): Promise<SearchSuggestion[]> {
-  // Validation: minimum 2 characters
-  if (!query || query.trim().length < 2) {
-    return [];
-  }
-
-  // Security: limit query length to prevent abuse
-  const sanitizedQuery = query.trim().slice(0, 100);
-
-  try {
+// Cached search function for better performance
+const getCachedSearchResults = unstable_cache(
+  async (sanitizedQuery: string) => {
     const supabase = await createClient();
 
     // Search approved notes only by title, subject, or branch
@@ -38,6 +32,25 @@ export async function getSearchSuggestions(query: string): Promise<SearchSuggest
     }
 
     return data || [];
+  },
+  ['search-suggestions'],
+  { 
+    revalidate: 60, // Cache for 60 seconds
+    tags: ['search'] 
+  }
+);
+
+export async function getSearchSuggestions(query: string): Promise<SearchSuggestion[]> {
+  // Validation: minimum 2 characters
+  if (!query || query.trim().length < 2) {
+    return [];
+  }
+
+  // Security: limit query length to prevent abuse
+  const sanitizedQuery = query.trim().slice(0, 100);
+
+  try {
+    return await getCachedSearchResults(sanitizedQuery);
   } catch (error) {
     console.error("❌ Search failed:", error);
     return [];
